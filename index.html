@@ -1098,6 +1098,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       </div>
       <label class="chk"><input type="checkbox" id="set-bmbar" /> Show bookmarks bar</label>
       <label class="chk"><input type="checkbox" id="set-cloak-default" /> Open new tabs cloaked (about:blank identity)</label>
+      <label class="chk"><input type="checkbox" id="set-hide-urls" /> Permanently hide URLs (omnibox, titles, menus)</label>
       <div class="field">
         <label>Default iframe allow attributes</label>
         <input id="set-allow" type="text" placeholder="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
@@ -1295,6 +1296,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       homepage: '',
       showBookmarksBar: false,
       cloakNewTabs: false,
+      hideUrlsPermanently: false,
       defaultAllow: DEFAULT_ALLOW,
       allowFullscreen: true,
       glass: true,
@@ -1627,7 +1629,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       const tEl = document.createElement('div');
       tEl.className = 'tab' + (tab.id === win.activeTabId ? ' active' : '');
       tEl.dataset.id = tab.id;
-      tEl.title = tab.cloaked ? 'about:blank' : tab.url;
+      tEl.title = isUrlHidden(tab) || isUrlHidden(win) ? 'about:blank' : tab.url;
       const fav = document.createElement('img');
       fav.className = 'fav';
       fav.src = displayFavicon(tab);
@@ -1664,7 +1666,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       const wrap = ensureFrameInWin(win, active, el);
       if (wrap) wrap.classList.add('active');
       if (omni) {
-        if (active.cloaked || win.cloak) {
+        if (isUrlHidden(active) || isUrlHidden(win)) {
           omni.value = 'about:blank';
           if (lock) lock.textContent = '👁';
         } else if (active.isHome || active.url === 'about:home') {
@@ -1683,7 +1685,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
 
     const nameEl = el.querySelector('.win-name');
     if (nameEl) {
-      if (win.cloak) nameEl.textContent = 'Browser';
+      if (isUrlHidden(win) || (active && isUrlHidden(active))) nameEl.textContent = 'Browser';
       else if (active) nameEl.textContent = 'Browser — ' + displayTitle(active);
       else nameEl.textContent = 'Browser';
     }
@@ -1978,13 +1980,41 @@ html.glass-on .browser-chrome .bw-bookmarks {
     return browsers[browsers.length - 1];
   }
 
+
+  function isUrlHidden(surface) {
+    if (state.settings.hideUrlsPermanently) return true;
+    if (!surface) return false;
+    if (surface.cloaked || surface.cloak) return true;
+    return false;
+  }
+
+  let _topZ = 20000;
+  function raiseWindow(win) {
+    if (!win) return;
+    _topZ += 1;
+    win.z = _topZ;
+    state.windows.forEach((w) => {
+      const el = w._el || document.querySelector(`[data-wid="${w.id}"]`);
+      if (!el) return;
+      el.style.zIndex = String(w.z || 20000);
+    });
+    const el = win._el || document.querySelector(`[data-wid="${win.id}"]`);
+    if (el) el.style.zIndex = String(win.z);
+    if (win.kind === 'browser') {
+      state.focusedBrowserId = win.id;
+      state.tabs = win.tabs || state.tabs;
+      state.activeTabId = win.activeTabId;
+    }
+    // un-minimize if needed
+    if (win.minimized) {
+      win.minimized = false;
+      if (el) el.classList.remove('minimized');
+    }
+  }
+
   function focusBrowser(win) {
     if (!win || win.kind !== 'browser') return;
-    state.focusedBrowserId = win.id;
-    state.windows.forEach((w) => {
-      const el = document.querySelector(`[data-wid="${w.id}"]`);
-      if (el) el.style.zIndex = w.id === win.id ? '20050' : '20000';
-    });
+    raiseWindow(win);
   }
 
   function toggleBookmark(tab) {
@@ -2094,6 +2124,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       h: isBrowser ? Math.min(720, window.innerHeight - 100) : 600,
       maximized: isBrowser,
       minimized: false,
+      z: 0,
       tabs: [],
       activeTabId: null,
       _iframe: null,
@@ -2209,9 +2240,9 @@ html.glass-on .browser-chrome .bw-bookmarks {
         if (e.target.closest('button') || e.target.closest('input') || win.maximized) return;
         drag = { ox: e.clientX - win.x, oy: e.clientY - win.y };
         e.preventDefault();
-        focusBrowser(win);
+        raiseWindow(win);
       });
-      el.addEventListener('mousedown', () => focusBrowser(win));
+      el.addEventListener('mousedown', () => raiseWindow(win));
       window.addEventListener('mousemove', (e) => {
         if (!drag) return;
         win.x = Math.max(0, e.clientX - drag.ox);
@@ -2332,12 +2363,10 @@ html.glass-on .browser-chrome .bw-bookmarks {
       }
     }
     win._el = el;
-    if (win.cloak) {
-      el.querySelector('.win-name').textContent = win.name || 'App';
-    } else if (win.kind === 'browser') {
-      el.querySelector('.win-name').textContent = 'Browser';
+    if (isUrlHidden(win) || win.kind === 'browser') {
+      el.querySelector('.win-name').textContent = win.name || (win.kind === 'browser' ? 'Browser' : 'App');
     } else {
-      el.querySelector('.win-name').textContent = win.name + ' — ' + win.url;
+      el.querySelector('.win-name').textContent = (win.name || 'App') + ' — ' + win.url;
     }
     const iconEl = el.querySelector('.win-icon');
     if (win.icon && (String(win.icon).startsWith('http') || String(win.icon).startsWith('data:'))) {
@@ -2347,7 +2376,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
     }
     applySurfaceFilter(el, win);
     layoutWindow(win, el);
-    if (win.kind === 'browser') focusBrowser(win);
+    raiseWindow(win);
   }
 
   function layoutWindow(win, el) {
@@ -2415,6 +2444,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
     document.getElementById('set-homepage').value = s.homepage || '';
     document.getElementById('set-bmbar').checked = !!s.showBookmarksBar;
     document.getElementById('set-cloak-default').checked = !!s.cloakNewTabs;
+    document.getElementById('set-hide-urls').checked = !!s.hideUrlsPermanently;
     document.getElementById('set-allow').value = s.defaultAllow || DEFAULT_ALLOW;
     document.getElementById('set-allowfs').checked = !!s.allowFullscreen;
     document.getElementById('set-glass').checked = s.glass !== false;
@@ -3122,6 +3152,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       homepage: '',
       showBookmarksBar: false,
       cloakNewTabs: false,
+      hideUrlsPermanently: false,
       defaultAllow: DEFAULT_ALLOW,
       allowFullscreen: true,
     };
@@ -3239,6 +3270,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       state.settings.homepage = document.getElementById('set-homepage').value.trim();
       state.settings.showBookmarksBar = document.getElementById('set-bmbar').checked;
       state.settings.cloakNewTabs = document.getElementById('set-cloak-default').checked;
+      state.settings.hideUrlsPermanently = document.getElementById('set-hide-urls').checked;
       state.settings.defaultAllow = document.getElementById('set-allow').value.trim() || DEFAULT_ALLOW;
       state.settings.allowFullscreen = document.getElementById('set-allowfs').checked;
       state.settings.glass = document.getElementById('set-glass').checked;
