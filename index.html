@@ -968,22 +968,27 @@ a { color: var(--accent); }
   ];
 
   /* Built-in preinstalled apps (also tries /preinstalled.json) */
-  const BUILTIN_APPS = [
-    { id: 'app-settings', name: 'Settings', url: 'about:settings', icon: '⚙', system: true, shelf: true },
-    { id: 'app-browser', name: 'Browser', url: 'about:home', icon: '🌐', system: true, shelf: true },
-    { id: 'app-files', name: 'Files', url: 'about:files', icon: '📁', system: true, shelf: false },
-    { id: 'app-terminal', name: 'Terminal', url: 'about:terminal', icon: '⬛', system: true, shelf: false },
-    { id: 'app-store', name: 'App Store', url: 'about:store', icon: '🛒', system: true, shelf: false },
-    { id: 'app-ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔎', shelf: true },
-    { id: 'app-yt', name: 'YouTube', url: 'https://www.youtube.com', icon: '▶', shelf: false },
-    { id: 'app-gh', name: 'GitHub', url: 'https://github.com', icon: '🐙', shelf: false },
-    { id: 'app-wiki', name: 'Wikipedia', url: 'https://wikipedia.org', icon: '📖', shelf: false },
-    { id: 'app-discord', name: 'Discord', url: 'https://discord.com/app', icon: '💬', shelf: false },
-    { id: 'app-spotify', name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵', shelf: false },
-    { id: 'app-gmail', name: 'Gmail', url: 'https://mail.google.com', icon: '✉', shelf: false },
-    { id: 'app-maps', name: 'Maps', url: 'https://maps.google.com', icon: '🗺', shelf: false },
-    { id: 'app-calc', name: 'Calculator', url: 'about:calc', icon: '🔢', system: true, shelf: false },
-  ];
+javascript
+
+const BUILTIN_APPS = [
+  { id: 'app-settings', name: 'Settings', url: 'about:settings', icon: '⚙', system: true, shelf: true },
+  { id: 'app-browser', name: 'Browser', url: 'about:home', icon: '🌐', system: true, shelf: true },
+  { id: 'app-files', name: 'Files', url: 'about:files', icon: '📁', system: true, shelf: false },
+  { id: 'app-terminal', name: 'Terminal', url: 'about:terminal', icon: '⬛', system: true, shelf: false },
+  { id: 'app-store', name: 'App Store', url: 'about:store', icon: '🛒', system: true, shelf: false },
+  { id: 'app-ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔎', shelf: true },
+  { id: 'app-yt', name: 'YouTube', url: 'https://www.youtube.com', icon: '▶', shelf: false },
+  { id: 'app-gh', name: 'GitHub', url: 'https://github.com', icon: '🐙', shelf: false },
+  { id: 'app-wiki', name: 'Wikipedia', url: 'https://wikipedia.org', icon: '📖', shelf: false },
+  { id: 'app-discord', name: 'Discord', url: 'https://discord.com/app', icon: '💬', shelf: false },
+  { id: 'app-spotify', name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵', shelf: false },
+  { id: 'app-gmail', name: 'Gmail', url: 'https://mail.google.com', icon: '✉', shelf: false },
+  { id: 'app-maps', name: 'Maps', url: 'https://maps.google.com', icon: '🗺', shelf: false },
+  { id: 'app-calc', name: 'Calculator', url: 'about:calc', icon: '🔢', system: true, shelf: false },
+
+  // Added n3xn_VFS
+  { id: 'app-n3xn-vfs', name: 'n3xn_VFS', url: 'https://n3xn-vfs.pages.dev/', icon: '🗂', shelf: false }
+];
 
   const state = {
     tabs: [],
