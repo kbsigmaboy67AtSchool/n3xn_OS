@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "app-chatgpt",
+      "name": "ChatGPT",
+      "url": "https://chatgpt.com",
+      "icon": "🤖",
+      "shelf": false,
+      "cloak": true
+    },
+    {
+      "id": "app-claude",
+      "name": "Claude",
+      "url": "https://claude.ai",
+      "icon": "✦",
+      "shelf": false,
+      "cloak": true
+    },
+    {
+      "id": "app-reddit",
+      "name": "Reddit",
+      "url": "https://www.reddit.com",
+      "icon": "👽",
+      "shelf": false
+    },
+    {
+      "id": "app-twitter",
+      "name": "X",
+      "url": "https://x.com",
+      "icon": "𝕏",
+      "shelf": false
+    },
+    {
+      "id": "app-netflix",
+      "name": "Netflix",
+      "url": "https://www.netflix.com",
+      "icon": "🎬",
+      "shelf": false
+    },
+    {
+      "id": "app-codepen",
+      "name": "CodePen",
+      "url": "https://codepen.io",
+      "icon": "✎",
+      "shelf": false
+    },
+    {
+      "id": "app-archive",
+      "name": "Internet Archive",
+      "url": "https://archive.org",
+      "icon": "📚",
+      "shelf": false
+    },
+    {
+      "id": "app-desmos",
+      "name": "Desmos",
+      "url": "https://www.desmos.com/calculator",
+      "icon": "📐",
+      "shelf": false
+    },
+    {
+      "id": "app-n3xn_VFS",
+      "name": "n3xn_VFS",
+      "url": "https://n3xn-vfs.pages.dev/",
+      "icon": "VFS",
+      "shelf": false
+    },
+  ]
+}
