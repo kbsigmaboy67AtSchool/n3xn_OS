@@ -283,7 +283,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 button { cursor: pointer; border: none; background: none; }
 a { color: var(--accent); }
 
-/* ── Shell ── */
+/* ── Shell (ChromeOS desktop — browser is an app, not the shell) ── */
 #os {
   display: flex;
   flex-direction: column;
@@ -293,6 +293,14 @@ a { color: var(--accent); }
   position: relative;
   z-index: 1;
   background: transparent;
+  pointer-events: none;
+}
+#os #shelf { pointer-events: auto; }
+#desktop {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  pointer-events: auto;
 }
 
 /* Tab strip (Chrome-like) */
@@ -897,39 +905,100 @@ html.glass-on .home-page {
   flex: 1;
   overflow: auto;
 }
-.win-browser-bar {
+/* Full Chrome-like browser chrome inside the Browser app window */
+.browser-chrome {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--surface);
+}
+.browser-chrome .bw-tabstrip {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: var(--tab-h);
+  min-height: var(--tab-h);
+  padding: 4px 8px 0 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.browser-chrome .bw-tabstrip::-webkit-scrollbar { display: none; }
+.browser-chrome .bw-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  height: 40px;
+  padding: 0 10px;
   background: var(--surface2);
   border-bottom: 1px solid var(--border-color2);
   flex-shrink: 0;
 }
-html.glass-on .win-browser-bar {
-  background: color-mix(in srgb, var(--surface2) calc(var(--glass-opacity) * 100%), transparent);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-}
-.win-browser-bar .win-omni {
+.browser-chrome .bw-omni-wrap {
   flex: 1;
-  height: 28px;
-  border-radius: 14px;
-  border: 1px solid var(--border-color2);
+  display: flex;
+  align-items: center;
+  height: 30px;
   background: var(--background-color);
-  color: var(--text-color);
+  border: 1px solid var(--border-color2);
+  border-radius: 16px;
   padding: 0 12px;
-  font-size: 12px;
-  outline: none;
+  gap: 8px;
   min-width: 0;
 }
-.win-browser-bar .win-omni:focus {
+.browser-chrome .bw-omni-wrap:focus-within {
   border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
 }
-.win-browser-bar .tb-btn {
-  width: 28px;
+.browser-chrome .bw-omni {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 13px;
+  min-width: 0;
+}
+.browser-chrome .bw-content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: color-mix(in srgb, var(--background-color) 88%, transparent);
+  overflow: hidden;
+}
+.browser-chrome .bw-bookmarks {
+  display: none;
+  align-items: center;
+  gap: 4px;
   height: 28px;
-  font-size: 14px;
+  padding: 0 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color2);
+  overflow-x: auto;
+  font-size: 12px;
+}
+.browser-chrome .bw-bookmarks.visible { display: flex; }
+html.glass-on .browser-chrome .bw-tabstrip,
+html.glass-on .browser-chrome .bw-toolbar,
+html.glass-on .browser-chrome .bw-bookmarks {
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  background: color-mix(in srgb, var(--surface) calc(var(--glass-opacity) * 100%), transparent);
+}
+.app-window.browser-app {
+  min-width: 480px;
+  min-height: 320px;
+}
+.app-window.browser-app .win-body {
+  background: transparent;
+  overflow: hidden;
+}
+.app-window.browser-app.maximized {
+  /* leave room for shelf like ChromeOS maximized windows */
+  bottom: var(--shelf-h) !important;
+  height: auto !important;
 }
 .app-window.maximized {
   inset: 0 !important;
@@ -990,22 +1059,8 @@ html.glass-on .win-browser-bar {
 </div>
 
 <div id="os">
-  <div id="tabstrip">
-    <button id="new-tab-btn" title="New tab (Ctrl+T)">+</button>
-  </div>
-  <div id="toolbar">
-    <button class="tb-btn" id="btn-back" title="Back">←</button>
-    <button class="tb-btn" id="btn-fwd" title="Forward">→</button>
-    <button class="tb-btn" id="btn-reload" title="Reload">↻</button>
-    <div id="omnibox-wrap">
-      <span class="omni-icon" id="omni-lock">🔒</span>
-      <input id="omnibox" type="text" spellcheck="false" autocomplete="off" placeholder="Search or enter URL" />
-    </div>
-    <button class="tb-btn" id="btn-star" title="Bookmark">☆</button>
-    <button class="tb-btn" id="btn-more" title="Menu">⋮</button>
-  </div>
-  <div id="bookmarks-bar"></div>
-  <div id="content"></div>
+  <!-- ChromeOS-style desktop: wallpaper only. Browser is an app window. -->
+  <div id="desktop"></div>
   <div id="shelf">
     <button class="shelf-btn" id="btn-launcher" title="Launcher">▦</button>
     <div id="shelf-apps"></div>
@@ -1452,90 +1507,44 @@ html.glass-on .win-browser-bar {
     return tab.customFavicon || tab.favicon || faviconFor(tab.url);
   }
 
-  /* ── Tab model ── */
+  /* ── Tab model (tabs live inside Browser app windows) ── */
   function createTab(opts = {}) {
-    const id = opts.id || uid('t');
-    const url = opts.url != null ? opts.url : (state.settings.homepage || 'about:home');
-    const tab = {
-      id,
-      url: normalizeUrl(url),
-      title: opts.title || '',
-      customTitle: opts.customTitle || null,
-      favicon: opts.favicon || null,
-      customFavicon: opts.customFavicon || null,
-      cloaked: opts.cloaked != null ? opts.cloaked : !!state.settings.cloakNewTabs,
-      allow: opts.allow != null ? opts.allow : state.settings.defaultAllow,
-      allowFullscreen: opts.allowFullscreen != null ? opts.allowFullscreen : !!state.settings.allowFullscreen,
-      brightness: opts.brightness != null ? opts.brightness : 1,
-      contrast: opts.contrast != null ? opts.contrast : 1,
-      saturate: opts.saturate != null ? opts.saturate : 1,
-      glass: opts.glass != null ? opts.glass : true,
-      isHome: false,
-      historyStack: [],
-      historyIndex: -1,
-      _iframe: null,
-      _wrap: null,
-      _dtInjected: false,
-    };
-    if (tab.url === 'about:home' || !tab.url || isAbout(tab.url) && tab.url === 'about:home') {
-      tab.isHome = true;
-      tab.url = 'about:home';
+    let win = getFocusedBrowser();
+    if (!win) {
+      openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐' });
+      win = getFocusedBrowser();
     }
-    state.tabs.push(tab);
-    if (tabIdSeq <= state.tabs.length) tabIdSeq = state.tabs.length + 1;
+    if (!win) return null;
+    const tab = createTabForWin(win, opts);
+    win.activeTabId = tab.id;
+    state.tabs = win.tabs;
+    state.activeTabId = tab.id;
+    if (win._el) renderBrowserUI(win, win._el);
+    scheduleSave();
     return tab;
   }
 
   function getTab(id) {
+    for (const w of state.windows) {
+      if (w.kind === 'browser') {
+        const t = (w.tabs || []).find((x) => x.id === id);
+        if (t) return t;
+      }
+    }
     return state.tabs.find((t) => t.id === id);
   }
 
   function getActiveTab() {
+    const win = getFocusedBrowser();
+    if (win) return win.tabs.find((t) => t.id === win.activeTabId) || win.tabs[0] || null;
     return getTab(state.activeTabId);
   }
 
   /* ── Render tabs ── */
   function renderTabstrip() {
-    const strip = document.getElementById('tabstrip');
-    const newBtn = document.getElementById('new-tab-btn');
-    strip.querySelectorAll('.tab').forEach((n) => n.remove());
-    state.tabs.forEach((tab) => {
-      const el = document.createElement('div');
-      el.className = 'tab' + (tab.id === state.activeTabId ? ' active' : '');
-      el.dataset.id = tab.id;
-      el.title = tab.cloaked ? 'about:blank' : tab.url;
-      const fav = document.createElement('img');
-      fav.className = 'fav';
-      fav.src = displayFavicon(tab);
-      fav.alt = '';
-      fav.onerror = () => { fav.src = DEFAULT_FAVICON; };
-      const title = document.createElement('span');
-      title.className = 'title';
-      title.textContent = displayTitle(tab);
-      const menuBtn = document.createElement('button');
-      menuBtn.className = 'chrome-menu-btn';
-      menuBtn.textContent = '⋮';
-      menuBtn.title = 'Tab menu';
-      menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openSurfaceMenu(e, { type: 'tab', tab });
-      });
-      const close = document.createElement('button');
-      close.className = 'close';
-      close.textContent = '×';
-      close.title = 'Close';
-      close.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeTab(tab.id);
-      });
-      el.append(fav, title, menuBtn, close);
-      el.addEventListener('click', () => activateTab(tab.id));
-      el.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        openTabContext(e, tab);
-      });
-      strip.insertBefore(el, newBtn);
-    });
+    // Tabs live inside Browser app windows only (ChromeOS model)
+    const win = getFocusedBrowser();
+    if (win && win._el) renderBrowserUI(win, win._el);
   }
 
   function applySurfaceFilter(el, surface) {
@@ -1549,7 +1558,18 @@ html.glass-on .win-browser-bar {
   }
 
   function ensureFrame(tab) {
-    if (tab._wrap) return tab._wrap;
+    // Legacy path: attach to focused browser content host
+    const win = getFocusedBrowser() || state.windows.find((w) => w.kind === 'browser');
+    if (!win || !win._el) return null;
+    return ensureFrameInWin(win, tab, win._el);
+  }
+
+  function ensureFrameInWin(win, tab, winEl) {
+    const content = winEl.querySelector('.bw-content');
+    if (!content) return null;
+    if (tab._wrap && tab._wrap.parentNode === content) return tab._wrap;
+    if (tab._wrap) tab._wrap.remove();
+
     const wrap = document.createElement('div');
     wrap.className = 'frame-wrap';
     wrap.dataset.id = tab.id;
@@ -1559,7 +1579,7 @@ html.glass-on .win-browser-bar {
     wrap.appendChild(loading);
 
     if (tab.isHome || tab.url === 'about:home') {
-      wrap.appendChild(buildHomePage(tab));
+      wrap.appendChild(buildHomePage(tab, win));
     } else if (isAbout(tab.url)) {
       wrap.appendChild(buildAboutPage(tab));
     } else {
@@ -1568,13 +1588,13 @@ html.glass-on .win-browser-bar {
       if (tab.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
       iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
       iframe.loading = 'eager';
-      // Keep alive — never unload on switch
       iframe.src = tab.url;
       wrap.classList.add('loading');
       iframe.addEventListener('load', () => {
         wrap.classList.remove('loading');
         tryUpdateTabMeta(tab, iframe);
         tryInjectDevtoolsIntoFrame(iframe, tab);
+        if (win._el) renderBrowserUI(win, win._el);
       });
       iframe.addEventListener('error', () => wrap.classList.remove('loading'));
       tab._iframe = iframe;
@@ -1582,8 +1602,117 @@ html.glass-on .win-browser-bar {
     }
     applySurfaceFilter(wrap, tab);
     tab._wrap = wrap;
-    document.getElementById('content').appendChild(wrap);
+    content.appendChild(wrap);
     return wrap;
+  }
+
+  function renderBrowserUI(win, el) {
+    if (!el || win.kind !== 'browser') return;
+    win._el = el;
+    // Sync global tab pointers for legacy helpers
+    state.tabs = win.tabs;
+    state.activeTabId = win.activeTabId;
+    state.focusedBrowserId = win.id;
+
+    const strip = el.querySelector('.bw-tabstrip');
+    const content = el.querySelector('.bw-content');
+    const omni = el.querySelector('.bw-omni');
+    const lock = el.querySelector('.bw-lock');
+    if (!strip || !content) return;
+
+    // Tabs
+    strip.querySelectorAll('.tab').forEach((n) => n.remove());
+    const newBtn = el.querySelector('.bw-new-tab');
+    win.tabs.forEach((tab) => {
+      const tEl = document.createElement('div');
+      tEl.className = 'tab' + (tab.id === win.activeTabId ? ' active' : '');
+      tEl.dataset.id = tab.id;
+      tEl.title = tab.cloaked ? 'about:blank' : tab.url;
+      const fav = document.createElement('img');
+      fav.className = 'fav';
+      fav.src = displayFavicon(tab);
+      fav.alt = '';
+      fav.onerror = () => { fav.src = DEFAULT_FAVICON; };
+      const title = document.createElement('span');
+      title.className = 'title';
+      title.textContent = displayTitle(tab);
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'chrome-menu-btn';
+      menuBtn.textContent = '⋮';
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSurfaceMenu(e, { type: 'tab', tab });
+      });
+      const close = document.createElement('button');
+      close.className = 'close';
+      close.textContent = '×';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTabInWin(win, tab.id);
+      });
+      tEl.append(fav, title, menuBtn, close);
+      tEl.addEventListener('click', () => activateTabInWin(win, tab.id));
+      tEl.addEventListener('contextmenu', (e) => openTabContext(e, tab));
+      strip.insertBefore(tEl, newBtn);
+    });
+
+    // Frames: keep alive, only show active
+    content.querySelectorAll('.frame-wrap').forEach((w) => w.classList.remove('active'));
+    const active = win.tabs.find((t) => t.id === win.activeTabId) || win.tabs[0];
+    if (active) {
+      win.activeTabId = active.id;
+      const wrap = ensureFrameInWin(win, active, el);
+      if (wrap) wrap.classList.add('active');
+      if (omni) {
+        if (active.cloaked || win.cloak) {
+          omni.value = 'about:blank';
+          if (lock) lock.textContent = '👁';
+        } else if (active.isHome || active.url === 'about:home') {
+          omni.value = '';
+          if (lock) lock.textContent = '🏠';
+        } else {
+          omni.value = active.url;
+          if (lock) lock.textContent = active.url.startsWith('https') ? '🔒' : '🌐';
+        }
+      }
+      const back = el.querySelector('.bw-back');
+      const fwd = el.querySelector('.bw-fwd');
+      if (back) back.disabled = active.historyIndex <= 0;
+      if (fwd) fwd.disabled = active.historyIndex >= (active.historyStack?.length || 0) - 1;
+    }
+
+    const nameEl = el.querySelector('.win-name');
+    if (nameEl) {
+      if (win.cloak) nameEl.textContent = 'Browser';
+      else if (active) nameEl.textContent = 'Browser — ' + displayTitle(active);
+      else nameEl.textContent = 'Browser';
+    }
+    fillBookmarksBar(el.querySelector('.bw-bookmarks'), win);
+    applySurfaceFilter(el, win);
+  }
+
+  function activateTabInWin(win, id) {
+    if (!win.tabs.some((t) => t.id === id)) return;
+    win.activeTabId = id;
+    focusBrowser(win);
+    if (win._el) renderBrowserUI(win, win._el);
+    scheduleSave();
+  }
+
+  function closeTabInWin(win, id) {
+    const idx = win.tabs.findIndex((t) => t.id === id);
+    if (idx < 0) return;
+    const tab = win.tabs[idx];
+    if (tab._wrap) { tab._wrap.remove(); tab._wrap = null; tab._iframe = null; }
+    win.tabs.splice(idx, 1);
+    if (!win.tabs.length) {
+      const t = createTabForWin(win, { url: 'about:home' });
+      win.activeTabId = t.id;
+    } else if (win.activeTabId === id) {
+      win.activeTabId = win.tabs[Math.min(idx, win.tabs.length - 1)].id;
+    }
+    if (win._el) renderBrowserUI(win, win._el);
+    scheduleSave();
   }
 
   function tryInjectDevtoolsIntoFrame(iframe, surface) {
@@ -1648,93 +1777,30 @@ html.glass-on .win-browser-bar {
   }, 2000);
 
   function activateTab(id) {
-    const tab = getTab(id);
-    if (!tab) return;
-    state.activeTabId = id;
-    // Hide all frames without unloading
-    document.querySelectorAll('.frame-wrap').forEach((w) => w.classList.remove('active'));
-    const wrap = ensureFrame(tab);
-    wrap.classList.add('active');
-    renderTabstrip();
-    updateOmnibox();
-    updateNavButtons();
-    scheduleSave();
+    const win = getFocusedBrowser() || state.windows.find((w) => w.kind === 'browser' && (w.tabs || []).some((t) => t.id === id));
+    if (win) activateTabInWin(win, id);
   }
 
   function closeTab(id) {
-    const idx = state.tabs.findIndex((t) => t.id === id);
-    if (idx < 0) return;
-    const tab = state.tabs[idx];
-    if (tab._wrap) {
-      tab._wrap.remove();
-      tab._wrap = null;
-      tab._iframe = null;
-    }
-    state.tabs.splice(idx, 1);
-    if (!state.tabs.length) {
-      const t = createTab({ url: 'about:home' });
-      activateTab(t.id);
-    } else if (state.activeTabId === id) {
-      const next = state.tabs[Math.min(idx, state.tabs.length - 1)];
-      activateTab(next.id);
-    } else {
-      renderTabstrip();
-      scheduleSave();
-    }
+    const win = state.windows.find((w) => w.kind === 'browser' && (w.tabs || []).some((t) => t.id === id)) || getFocusedBrowser();
+    if (win) closeTabInWin(win, id);
   }
 
   function navigateTab(tab, url, { push = true } = {}) {
-    url = normalizeUrl(url);
-    tab.url = url;
-    tab.isHome = url === 'about:home';
-    if (!tab.customTitle) tab.title = '';
-    if (!tab.customFavicon) tab.favicon = faviconFor(url);
-
-    // Rebuild frame content (keep wrapper in DOM tree order)
-    if (tab._wrap) {
-      tab._wrap.remove();
-      tab._wrap = null;
-      tab._iframe = null;
+    const win = state.windows.find((w) => w.kind === 'browser' && (w.tabs || []).some((t) => t.id === tab.id)) || getFocusedBrowser();
+    if (win) {
+      const t = win.tabs.find((x) => x.id === tab.id) || tab;
+      navigateTabInWin(win, t, url, { push });
     }
-    if (push) {
-      tab.historyStack = tab.historyStack.slice(0, tab.historyIndex + 1);
-      tab.historyStack.push(url);
-      tab.historyIndex = tab.historyStack.length - 1;
-    }
-    ensureFrame(tab);
-    if (tab.id === state.activeTabId) {
-      tab._wrap.classList.add('active');
-      updateOmnibox();
-      updateNavButtons();
-    }
-    renderTabstrip();
-    addHistory(url, displayTitle(tab));
-    scheduleSave();
   }
 
   function updateOmnibox() {
-    const tab = getActiveTab();
-    const input = document.getElementById('omnibox');
-    if (!tab) {
-      input.value = '';
-      return;
-    }
-    if (tab.cloaked) {
-      input.value = 'about:blank';
-      document.getElementById('omni-lock').textContent = '👁';
-    } else if (tab.isHome || tab.url === 'about:home') {
-      input.value = '';
-      document.getElementById('omni-lock').textContent = '🏠';
-    } else {
-      input.value = tab.url;
-      document.getElementById('omni-lock').textContent = tab.url.startsWith('https') ? '🔒' : '🌐';
-    }
+    const win = getFocusedBrowser();
+    if (win && win._el) renderBrowserUI(win, win._el);
   }
 
   function updateNavButtons() {
-    const tab = getActiveTab();
-    document.getElementById('btn-back').disabled = !tab || tab.historyIndex <= 0;
-    document.getElementById('btn-fwd').disabled = !tab || tab.historyIndex >= (tab.historyStack?.length || 0) - 1;
+    updateOmnibox();
   }
 
   /* ── Home / about pages ── */
@@ -1902,8 +1968,27 @@ html.glass-on .win-browser-bar {
     scheduleSave();
   }
 
-  function toggleBookmark() {
-    const tab = getActiveTab();
+  function getFocusedBrowser() {
+    const browsers = state.windows.filter((w) => w.kind === 'browser' && !w.minimized);
+    if (!browsers.length) return null;
+    if (state.focusedBrowserId) {
+      const f = browsers.find((w) => w.id === state.focusedBrowserId);
+      if (f) return f;
+    }
+    return browsers[browsers.length - 1];
+  }
+
+  function focusBrowser(win) {
+    if (!win || win.kind !== 'browser') return;
+    state.focusedBrowserId = win.id;
+    state.windows.forEach((w) => {
+      const el = document.querySelector(`[data-wid="${w.id}"]`);
+      if (el) el.style.zIndex = w.id === win.id ? '20050' : '20000';
+    });
+  }
+
+  function toggleBookmark(tab) {
+    tab = tab || getActiveTab();
     if (!tab || isAbout(tab.url)) return;
     const i = state.bookmarks.findIndex((b) => b.url === tab.url);
     if (i >= 0) {
@@ -1918,12 +2003,12 @@ html.glass-on .win-browser-bar {
       });
       toast('Bookmarked');
     }
-    renderBookmarksBar();
+    document.querySelectorAll('.bw-bookmarks').forEach((bar) => fillBookmarksBar(bar));
     scheduleSave();
   }
 
-  function renderBookmarksBar() {
-    const bar = document.getElementById('bookmarks-bar');
+  function fillBookmarksBar(bar, win) {
+    if (!bar) return;
     bar.classList.toggle('visible', !!state.settings.showBookmarksBar);
     bar.innerHTML = '';
     state.bookmarks.forEach((b) => {
@@ -1932,23 +2017,22 @@ html.glass-on .win-browser-bar {
       chip.textContent = b.title || b.url;
       chip.title = b.url;
       chip.addEventListener('click', () => {
-        const tab = getActiveTab();
-        if (tab) navigateTab(tab, b.url);
+        if (win) {
+          const tab = win.tabs.find((t) => t.id === win.activeTabId) || win.tabs[0];
+          if (tab) navigateTabInWin(win, tab, b.url);
+        }
       });
       chip.addEventListener('contextmenu', (e) => openBookmarkContext(e, b));
       bar.appendChild(chip);
     });
-    bar.oncontextmenu = (e) => {
-      if (e.target === bar) {
-        showContextMenu(e, [
-          { label: 'Add bookmark from current tab', fn: toggleBookmark },
-          { label: 'Hide bookmarks bar', fn: () => {
-            state.settings.showBookmarksBar = false;
-            renderBookmarksBar(); scheduleSave();
-          }},
-        ]);
-      }
-    };
+  }
+
+  function renderBookmarksBar() {
+    document.querySelectorAll('.bw-bookmarks').forEach((bar) => {
+      const wid = bar.closest('.app-window')?.dataset?.wid;
+      const win = state.windows.find((w) => w.id === wid);
+      fillBookmarksBar(bar, win);
+    });
   }
 
   /* ── Apps / windows ── */
@@ -1958,13 +2042,29 @@ html.glass-on .win-browser-bar {
       closeLauncher();
       return;
     }
-    // Browser is a first-class multi-window app (own chrome + all window options)
+    // Chrome on ChromeOS: Browser is an app — focus existing or open a new Browser window
     if (app.id === 'app-browser' || app.kind === 'browser' || app.url === 'about:browser') {
+      if (!app.forceNew) {
+        const existing = state.windows.find((w) => w.kind === 'browser' && !w.minimized);
+        if (existing) {
+          existing.minimized = false;
+          const el = document.querySelector(`[data-wid="${existing.id}"]`);
+          if (el) {
+            el.classList.remove('minimized');
+            focusBrowser(existing);
+            el.style.zIndex = '20050';
+          }
+          closeLauncher();
+          return;
+        }
+      }
       openAppWindow({
         ...app,
         kind: 'browser',
+        name: 'Browser',
+        icon: '🌐',
         url: state.settings.homepage || 'about:home',
-        cloak: app.cloak != null ? app.cloak : false,
+        cloak: !!app.cloak,
       });
       closeLauncher();
       return;
@@ -1979,7 +2079,7 @@ html.glass-on .win-browser-bar {
     const win = {
       id,
       appId: app.id,
-      name: app.name || (isBrowser ? 'Browser' : 'App'),
+      name: isBrowser ? 'Browser' : (app.name || 'App'),
       url: app.url || (isBrowser ? (state.settings.homepage || 'about:home') : 'about:blank'),
       icon: app.icon || (isBrowser ? '🌐' : '📦'),
       kind: isBrowser ? 'browser' : (app.kind || 'app'),
@@ -1988,70 +2088,95 @@ html.glass-on .win-browser-bar {
       contrast: 1,
       saturate: 1,
       glass: true,
-      x: 60 + (state.windows.length % 7) * 32,
-      y: 48 + (state.windows.length % 7) * 28,
-      w: isBrowser ? 1040 : 900,
-      h: isBrowser ? 700 : 600,
-      maximized: false,
+      x: isBrowser ? 48 : 60 + (state.windows.length % 7) * 32,
+      y: isBrowser ? 36 : 48 + (state.windows.length % 7) * 28,
+      w: isBrowser ? Math.min(1100, window.innerWidth - 80) : 900,
+      h: isBrowser ? Math.min(720, window.innerHeight - 100) : 600,
+      maximized: isBrowser,
       minimized: false,
+      tabs: [],
+      activeTabId: null,
       _iframe: null,
       _dtInjected: false,
-      _browserOmni: null,
+      _el: null,
     };
     state.windows.push(win);
+    if (isBrowser) {
+      // Seed first tab from shared/persisted tabs if this is first browser
+      const seed = (state.tabs && state.tabs.length)
+        ? state.tabs.map((t) => ({ ...t, _iframe: null, _wrap: null, _dtInjected: false }))
+        : null;
+      if (seed && seed.length) {
+        win.tabs = seed;
+        win.activeTabId = state.activeTabId && seed.some((t) => t.id === state.activeTabId)
+          ? state.activeTabId
+          : seed[0].id;
+        state.tabs = win.tabs;
+        state.activeTabId = win.activeTabId;
+      } else {
+        const tab = createTabForWin(win, { url: win.url });
+        win.activeTabId = tab.id;
+      }
+      state.focusedBrowserId = win.id;
+    }
     renderWindow(win);
   }
 
-  function navigateBrowserWindow(win, el, rawUrl) {
-    const url = normalizeUrl(rawUrl);
-    win.url = url;
-    const body = el.querySelector('.win-body');
-    if (!body) return;
-    body.innerHTML = '';
-    win._iframe = null;
-    win._dtInjected = false;
-    if (isAbout(url)) {
-      const fakeTab = { url, id: win.id };
-      if (url === 'about:home' || url === 'about:browser') {
-        // lightweight new-tab page inside browser window
-        const page = document.createElement('div');
-        page.className = 'home-page';
-        page.style.padding = '20px';
-        page.innerHTML = `<h1 style="font-size:28px">New Tab</h1><p class="sub">Type a URL in the address bar</p>`;
-        const grid = document.createElement('div');
-        grid.className = 'apps-grid';
-        state.apps.filter((a) => a.shelf || a.id === 'app-ddg').slice(0, 8).forEach((a) => {
-          grid.appendChild(makeAppTile(a, () => navigateBrowserWindow(win, el, a.url)));
-        });
-        page.appendChild(grid);
-        body.appendChild(page);
-      } else {
-        body.appendChild(buildAboutPage(fakeTab));
-      }
-    } else {
-      const iframe = document.createElement('iframe');
-      iframe.src = url;
-      iframe.setAttribute('allow', state.settings.defaultAllow);
-      if (state.settings.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
-      iframe.addEventListener('load', () => {
-        tryInjectDevtoolsIntoFrame(iframe, win);
-        try {
-          const doc = iframe.contentDocument;
-          if (doc && doc.title && !win.cloak) {
-            win.name = doc.title;
-            const nameEl = el.querySelector('.win-name');
-            if (nameEl) nameEl.textContent = win.name;
-          }
-        } catch {}
-      });
-      win._iframe = iframe;
-      body.appendChild(iframe);
+  function createTabForWin(win, opts = {}) {
+    const tab = {
+      id: opts.id || uid('t'),
+      url: normalizeUrl(opts.url != null ? opts.url : (state.settings.homepage || 'about:home')),
+      title: opts.title || '',
+      customTitle: opts.customTitle || null,
+      favicon: opts.favicon || null,
+      customFavicon: opts.customFavicon || null,
+      cloaked: opts.cloaked != null ? opts.cloaked : !!state.settings.cloakNewTabs,
+      allow: opts.allow != null ? opts.allow : state.settings.defaultAllow,
+      allowFullscreen: opts.allowFullscreen != null ? opts.allowFullscreen : !!state.settings.allowFullscreen,
+      brightness: opts.brightness != null ? opts.brightness : 1,
+      contrast: opts.contrast != null ? opts.contrast : 1,
+      saturate: opts.saturate != null ? opts.saturate : 1,
+      glass: opts.glass != null ? opts.glass : true,
+      isHome: false,
+      historyStack: [],
+      historyIndex: -1,
+      _iframe: null,
+      _wrap: null,
+      _dtInjected: false,
+      winId: win.id,
+    };
+    if (tab.url === 'about:home' || tab.url === 'about:browser') {
+      tab.isHome = true;
+      tab.url = 'about:home';
     }
-    const omni = el.querySelector('.win-omni');
-    if (omni) omni.value = win.cloak ? '' : (isAbout(url) ? '' : url);
-    const nameEl = el.querySelector('.win-name');
-    if (nameEl) nameEl.textContent = win.cloak ? (win.name || 'Browser') : ((win.name || 'Browser') + (isAbout(url) ? '' : ' — ' + url));
-    applySurfaceFilter(el, win);
+    win.tabs.push(tab);
+    return tab;
+  }
+
+  function navigateTabInWin(win, tab, rawUrl, { push = true } = {}) {
+    const url = normalizeUrl(rawUrl);
+    tab.url = url;
+    tab.isHome = url === 'about:home';
+    if (!tab.customTitle) tab.title = '';
+    if (!tab.customFavicon) tab.favicon = faviconFor(url);
+    if (tab._wrap) {
+      tab._wrap.remove();
+      tab._wrap = null;
+      tab._iframe = null;
+      tab._dtInjected = false;
+    }
+    if (push) {
+      tab.historyStack = (tab.historyStack || []).slice(0, tab.historyIndex + 1);
+      tab.historyStack.push(url);
+      tab.historyIndex = tab.historyStack.length - 1;
+    }
+    const el = win._el || document.querySelector(`[data-wid="${win.id}"]`);
+    if (el) {
+      ensureFrameInWin(win, tab, el);
+      renderBrowserUI(win, el);
+    }
+    addHistory(url, displayTitle(tab));
+    scheduleSave();
   }
 
   function renderWindow(win) {
@@ -2059,9 +2184,9 @@ html.glass-on .win-browser-bar {
     let el = root.querySelector(`[data-wid="${win.id}"]`);
     if (!el) {
       el = document.createElement('div');
-      el.className = 'app-window';
-      el.dataset.wid = win.id;
       const isBrowser = win.kind === 'browser';
+      el.className = 'app-window' + (isBrowser ? ' browser-app' : '');
+      el.dataset.wid = win.id;
       el.innerHTML = `
         <div class="win-titlebar">
           <span class="win-icon"></span>
@@ -2073,15 +2198,10 @@ html.glass-on .win-browser-bar {
             <button class="win-close" title="Close">✕</button>
           </div>
         </div>
-        ${isBrowser ? `<div class="win-browser-bar">
-          <button class="tb-btn win-back" title="Back">←</button>
-          <button class="tb-btn win-reload" title="Reload">↻</button>
-          <input class="win-omni" type="text" spellcheck="false" placeholder="Search or enter URL" />
-          <button class="tb-btn win-go" title="Go">→</button>
-        </div>` : ''}
         <div class="win-body"></div>
         <div class="resize-handle"></div>`;
       root.appendChild(el);
+      win._el = el;
 
       const bar = el.querySelector('.win-titlebar');
       let drag = null;
@@ -2089,7 +2209,9 @@ html.glass-on .win-browser-bar {
         if (e.target.closest('button') || e.target.closest('input') || win.maximized) return;
         drag = { ox: e.clientX - win.x, oy: e.clientY - win.y };
         e.preventDefault();
+        focusBrowser(win);
       });
+      el.addEventListener('mousedown', () => focusBrowser(win));
       window.addEventListener('mousemove', (e) => {
         if (!drag) return;
         win.x = Math.max(0, e.clientX - drag.ox);
@@ -2099,8 +2221,10 @@ html.glass-on .win-browser-bar {
       window.addEventListener('mouseup', () => { drag = null; });
 
       el.querySelector('.win-close').addEventListener('click', () => {
+        (win.tabs || []).forEach((t) => { if (t._wrap) t._wrap.remove(); });
         el.remove();
         state.windows = state.windows.filter((w) => w.id !== win.id);
+        if (state.focusedBrowserId === win.id) state.focusedBrowserId = null;
       });
       el.querySelector('.win-min').addEventListener('click', () => {
         win.minimized = true;
@@ -2131,19 +2255,71 @@ html.glass-on .win-browser-bar {
       });
       window.addEventListener('mouseup', () => { resizing = null; });
 
+      const body = el.querySelector('.win-body');
       if (isBrowser) {
-        const omni = el.querySelector('.win-omni');
-        const go = () => navigateBrowserWindow(win, el, omni.value);
+        body.innerHTML = `
+          <div class="browser-chrome">
+            <div class="bw-tabstrip">
+              <button class="bw-new-tab" id="" title="New tab" style="width:28px;height:28px;border-radius:6px;color:var(--muted);font-size:18px">+</button>
+            </div>
+            <div class="bw-toolbar">
+              <button class="tb-btn bw-back" title="Back">←</button>
+              <button class="tb-btn bw-fwd" title="Forward">→</button>
+              <button class="tb-btn bw-reload" title="Reload">↻</button>
+              <div class="bw-omni-wrap">
+                <span class="omni-icon bw-lock">🔒</span>
+                <input class="bw-omni" type="text" spellcheck="false" placeholder="Search or enter URL" />
+              </div>
+              <button class="tb-btn bw-star" title="Bookmark">☆</button>
+              <button class="tb-btn bw-more" title="Menu">⋮</button>
+            </div>
+            <div class="bw-bookmarks"></div>
+            <div class="bw-content"></div>
+          </div>`;
+        const omni = el.querySelector('.bw-omni');
+        const go = () => {
+          const tab = win.tabs.find((t) => t.id === win.activeTabId) || win.tabs[0];
+          if (tab) navigateTabInWin(win, tab, omni.value);
+        };
         omni.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-        el.querySelector('.win-go').addEventListener('click', go);
-        el.querySelector('.win-reload').addEventListener('click', () => navigateBrowserWindow(win, el, win.url));
-        el.querySelector('.win-back').addEventListener('click', () => navigateBrowserWindow(win, el, 'about:home'));
-        navigateBrowserWindow(win, el, win.url === 'about:browser' ? 'about:home' : win.url);
+        el.querySelector('.bw-new-tab').addEventListener('click', () => {
+          const t = createTabForWin(win, { url: 'about:home' });
+          win.activeTabId = t.id;
+          renderBrowserUI(win, el);
+        });
+        el.querySelector('.bw-back').addEventListener('click', () => {
+          const tab = win.tabs.find((t) => t.id === win.activeTabId);
+          if (!tab || tab.historyIndex <= 0) return;
+          tab.historyIndex--;
+          navigateTabInWin(win, tab, tab.historyStack[tab.historyIndex], { push: false });
+        });
+        el.querySelector('.bw-fwd').addEventListener('click', () => {
+          const tab = win.tabs.find((t) => t.id === win.activeTabId);
+          if (!tab || tab.historyIndex >= tab.historyStack.length - 1) return;
+          tab.historyIndex++;
+          navigateTabInWin(win, tab, tab.historyStack[tab.historyIndex], { push: false });
+        });
+        el.querySelector('.bw-reload').addEventListener('click', () => {
+          const tab = win.tabs.find((t) => t.id === win.activeTabId);
+          if (tab) navigateTabInWin(win, tab, tab.url, { push: false });
+        });
+        el.querySelector('.bw-star').addEventListener('click', () => {
+          const tab = win.tabs.find((t) => t.id === win.activeTabId);
+          toggleBookmark(tab);
+        });
+        el.querySelector('.bw-more').addEventListener('click', (e) => {
+          e.stopPropagation();
+          openSurfaceMenu(e, { type: 'window', win, el });
+        });
+        if (!win.tabs.length) {
+          const t = createTabForWin(win, { url: state.settings.homepage || 'about:home' });
+          win.activeTabId = t.id;
+        }
+        renderBrowserUI(win, el);
+        if (win.maximized) el.classList.add('maximized');
       } else {
-        const body = el.querySelector('.win-body');
         if (isAbout(win.url)) {
-          const fakeTab = { url: win.url, id: win.id };
-          body.appendChild(buildAboutPage(fakeTab));
+          body.appendChild(buildAboutPage({ url: win.url, id: win.id }));
         } else {
           const iframe = document.createElement('iframe');
           iframe.src = win.url;
@@ -2155,10 +2331,11 @@ html.glass-on .win-browser-bar {
         }
       }
     }
+    win._el = el;
     if (win.cloak) {
       el.querySelector('.win-name').textContent = win.name || 'App';
     } else if (win.kind === 'browser') {
-      el.querySelector('.win-name').textContent = win.name || 'Browser';
+      el.querySelector('.win-name').textContent = 'Browser';
     } else {
       el.querySelector('.win-name').textContent = win.name + ' — ' + win.url;
     }
@@ -2170,10 +2347,17 @@ html.glass-on .win-browser-bar {
     }
     applySurfaceFilter(el, win);
     layoutWindow(win, el);
+    if (win.kind === 'browser') focusBrowser(win);
   }
 
   function layoutWindow(win, el) {
-    if (win.maximized) return;
+    if (win.maximized) {
+      el.style.left = '0';
+      el.style.top = '0';
+      el.style.width = '100%';
+      el.style.height = '';
+      return;
+    }
     el.style.left = win.x + 'px';
     el.style.top = win.y + 'px';
     el.style.width = win.w + 'px';
@@ -2549,7 +2733,11 @@ html.glass-on .win-browser-bar {
         if (!tab) return;
         navigator.clipboard.writeText(tab.url).then(() => toast('URL copied')).catch(() => toast(tab.url));
       }},
-      { label: 'Clear omnibox', fn: () => { document.getElementById('omnibox').value = ''; document.getElementById('omnibox').focus(); } },
+      { label: 'Clear omnibox', fn: () => {
+        const win = getFocusedBrowser();
+        const omni = win && win._el && win._el.querySelector('.bw-omni');
+        if (omni) { omni.value = ''; omni.focus(); }
+      }},
       { sep: true },
       { label: tab && tab.cloaked ? 'Uncloak tab' : 'Cloak tab', fn: () => { if (tab) cloakTab(tab); } },
     ]);
@@ -2602,8 +2790,14 @@ html.glass-on .win-browser-bar {
       if (surface.kind === 'browser') {
         items.push(
           { label: 'New Browser window', fn: () => openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐' }) },
-          { label: 'Home / New Tab page', fn: () => ctx.el && navigateBrowserWindow(surface, ctx.el, 'about:home') },
-          { label: 'Reload page', fn: () => ctx.el && navigateBrowserWindow(surface, ctx.el, surface.url) },
+          { label: 'Home / New Tab page', fn: () => {
+            const tab = surface.tabs && surface.tabs.find((x) => x.id === surface.activeTabId);
+            if (tab) navigateTabInWin(surface, tab, 'about:home');
+          }},
+          { label: 'Reload page', fn: () => {
+            const tab = surface.tabs && surface.tabs.find((x) => x.id === surface.activeTabId);
+            if (tab) navigateTabInWin(surface, tab, tab.url, { push: false });
+          }},
         );
       }
     }
@@ -2941,41 +3135,17 @@ html.glass-on .win-browser-bar {
 
   /* ── Wire UI ── */
   function wire() {
-    document.getElementById('new-tab-btn').addEventListener('click', () => {
-      const t = createTab();
-      activateTab(t.id);
+    document.getElementById('desktop').addEventListener('dblclick', () => {
+      openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐' });
     });
-    document.getElementById('btn-back').addEventListener('click', () => {
-      const tab = getActiveTab();
-      if (!tab || tab.historyIndex <= 0) return;
-      tab.historyIndex--;
-      navigateTab(tab, tab.historyStack[tab.historyIndex], { push: false });
-    });
-    document.getElementById('btn-fwd').addEventListener('click', () => {
-      const tab = getActiveTab();
-      if (!tab || tab.historyIndex >= tab.historyStack.length - 1) return;
-      tab.historyIndex++;
-      navigateTab(tab, tab.historyStack[tab.historyIndex], { push: false });
-    });
-    document.getElementById('btn-reload').addEventListener('click', () => {
-      const tab = getActiveTab();
-      if (!tab) return;
-      if (tab._iframe) {
-        try { tab._iframe.contentWindow.location.reload(); } catch { navigateTab(tab, tab.url, { push: false }); }
-      } else {
-        navigateTab(tab, tab.url, { push: false });
-      }
-    });
-    document.getElementById('omnibox').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      const tab = getActiveTab();
-      if (!tab) return;
-      navigateTab(tab, e.target.value);
-    });
-    document.getElementById('btn-star').addEventListener('click', toggleBookmark);
-    document.getElementById('btn-more').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openMoreMenu(e);
+    document.getElementById('desktop').addEventListener('contextmenu', (e) => {
+      showContextMenu(e, [
+        { label: 'Open Browser', fn: () => openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser' }) },
+        { label: 'Open launcher', fn: openLauncher },
+        { label: 'Settings', fn: openSettings },
+        { sep: true },
+        { label: 'Change wallpaper…', fn: openSettings },
+      ]);
     });
     document.getElementById('btn-launcher').addEventListener('click', () => {
       if (document.getElementById('launcher').classList.contains('open')) closeLauncher();
@@ -3144,19 +3314,18 @@ html.glass-on .win-browser-bar {
       // Already handled by element-specific handlers (they stopPropagation)
       if (e.defaultPrevented) return;
 
-      if (t.closest('#tabstrip')) {
+      if (t.closest('.bw-tabstrip')) {
         if (!t.closest('.tab')) openTabstripEmptyContext(e);
         return;
       }
-      if (t.closest('#omnibox-wrap') || t.id === 'omnibox') {
+      if (t.closest('.bw-omni-wrap') || t.classList.contains('bw-omni')) {
         openOmniboxContext(e);
         return;
       }
-      if (t.closest('#toolbar')) {
+      if (t.closest('.bw-toolbar')) {
         showContextMenu(e, [
-          { label: 'New tab', fn: () => { const tab = createTab(); activateTab(tab.id); } },
-          { label: 'Reload', fn: () => document.getElementById('btn-reload').click() },
-          { label: 'Bookmark page', fn: toggleBookmark },
+          { label: 'New tab', fn: () => createTab() },
+          { label: 'Bookmark page', fn: () => toggleBookmark() },
           { sep: true },
           { label: 'Settings', fn: openSettings },
         ]);
@@ -3208,8 +3377,14 @@ html.glass-on .win-browser-bar {
       }
       if (e.ctrlKey && e.key === 'l') {
         e.preventDefault();
-        document.getElementById('omnibox').focus();
-        document.getElementById('omnibox').select();
+        const win = getFocusedBrowser();
+        const omni = win && win._el && win._el.querySelector('.bw-omni');
+        if (omni) { omni.focus(); omni.select(); }
+        else openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser' });
+      }
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        openApp({ id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐', forceNew: true });
       }
       if (e.key === 'Escape') {
         closeLauncher();
@@ -3249,25 +3424,21 @@ html.glass-on .win-browser-bar {
     tickClock();
     setInterval(tickClock, 10000);
 
-    if (!state.tabs.length) {
-      const t = createTab({ url: 'about:home' });
-      activateTab(t.id);
-    } else {
-      state.tabs.forEach((t) => {
-        t._iframe = null;
-        t._wrap = null;
-        t._dtInjected = false;
-        if (t.brightness == null) t.brightness = 1;
-        if (t.contrast == null) t.contrast = 1;
-        if (t.saturate == null) t.saturate = 1;
-        t.historyStack = t.historyStack || [t.url];
-        t.historyIndex = t.historyIndex != null ? t.historyIndex : 0;
-      });
-      activateTab(state.activeTabId || state.tabs[0].id);
-    }
-
+    // ChromeOS model: start on desktop; Browser is an app (auto-open once)
+    state.tabs.forEach((t) => {
+      t._iframe = null;
+      t._wrap = null;
+      t._dtInjected = false;
+      if (t.brightness == null) t.brightness = 1;
+      if (t.contrast == null) t.contrast = 1;
+      if (t.saturate == null) t.saturate = 1;
+      t.historyStack = t.historyStack || [t.url];
+      t.historyIndex = t.historyIndex != null ? t.historyIndex : 0;
+    });
     await loadPreinstalled();
     renderShelf();
+    // Open Browser app like Chrome on ChromeOS login
+    openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐' });
     injectDevTools();
 
     requestAnimationFrame(() => {
