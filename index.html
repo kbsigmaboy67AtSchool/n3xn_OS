@@ -34,7 +34,129 @@
   --muted: #9aa0a6;
   --radius: 12px;
   --shadow: 0 8px 32px rgba(0,0,0,.45);
+  --glass-blur: 16px;
+  --glass-opacity: 0.72;
+  --desktop-fit: cover;
+  --desktop-pos: center;
+  --desktop-brightness: 1;
+  --desktop-blur: 0px;
+  --desktop-dim: 0.35;
 }
+
+html.glass-on #tabstrip,
+html.glass-on #toolbar,
+html.glass-on #bookmarks-bar,
+html.glass-on #shelf,
+html.glass-on .app-window .win-titlebar,
+html.glass-on .modal,
+html.glass-on .ctx-menu,
+html.glass-on .launcher-panel,
+html.glass-on .tab.active {
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+}
+
+html.glass-on #tabstrip {
+  background: color-mix(in srgb, var(--surface) calc(var(--glass-opacity) * 100%), transparent);
+}
+html.glass-on #toolbar,
+html.glass-on #bookmarks-bar {
+  background: color-mix(in srgb, var(--surface2) calc(var(--glass-opacity) * 100%), transparent);
+}
+html.glass-on #shelf {
+  background: color-mix(in srgb, var(--shelf-bg) calc(var(--glass-opacity) * 100%), transparent);
+}
+html.glass-on .app-window {
+  background: color-mix(in srgb, var(--surface) calc(var(--glass-opacity) * 100%), transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+html.glass-on .modal,
+html.glass-on .ctx-menu,
+html.glass-on .launcher-panel {
+  background: color-mix(in srgb, var(--surface) calc(var(--glass-opacity) * 100%), transparent);
+}
+
+#desktop-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--background-color);
+}
+#desktop-bg img,
+#desktop-bg video {
+  width: 100%;
+  height: 100%;
+  object-fit: var(--desktop-fit);
+  object-position: var(--desktop-pos);
+  filter: brightness(var(--desktop-brightness)) blur(var(--desktop-blur));
+  transform: scale(1.02);
+}
+#desktop-bg .dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--desktop-dim));
+}
+#os {
+  position: relative;
+  z-index: 1;
+}
+
+.chrome-menu-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  transition: background .12s, color .12s;
+}
+.chrome-menu-btn:hover {
+  background: var(--hover-color);
+  color: var(--text-color);
+}
+.tab .chrome-menu-btn {
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  opacity: 0;
+}
+.tab:hover .chrome-menu-btn,
+.tab.active .chrome-menu-btn { opacity: 0.85; }
+
+.frame-wrap iframe,
+.app-window .win-body iframe {
+  filter: brightness(var(--surface-brightness, 1)) contrast(var(--surface-contrast, 1)) saturate(var(--surface-saturate, 1));
+}
+
+.fs-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  background: rgba(0,0,0,.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.fs-prompt .card {
+  background: var(--surface);
+  border: 1px solid var(--border-color2);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.fs-prompt h2 { margin-bottom: 8px; font-size: 18px; }
+.fs-prompt p { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.fs-prompt .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
 :root.theme-azurite {
   --text-color: #c8d9e9;
@@ -169,7 +291,8 @@ a { color: var(--accent); }
   height: 100dvh;
   width: 100%;
   position: relative;
-  background: var(--background-color);
+  z-index: 1;
+  background: transparent;
 }
 
 /* Tab strip (Chrome-like) */
@@ -298,14 +421,20 @@ a { color: var(--accent); }
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #000;
+  background: transparent;
   min-height: 0;
 }
 .frame-wrap {
   position: absolute;
   inset: 0;
   display: none;
-  background: #111;
+  background: color-mix(in srgb, var(--background-color) 88%, transparent);
+}
+html.glass-on .frame-wrap {
+  background: color-mix(in srgb, var(--background-color) 55%, transparent);
+}
+html.glass-on .home-page {
+  background: transparent;
 }
 .frame-wrap.active { display: block; }
 .frame-wrap iframe {
@@ -758,9 +887,49 @@ a { color: var(--accent); }
   min-height: 0;
   position: relative;
   background: #111;
+  display: flex;
+  flex-direction: column;
 }
 .app-window .win-body iframe {
-  width: 100%; height: 100%; border: 0;
+  width: 100%; height: 100%; border: 0; flex: 1;
+}
+.app-window .win-body .home-page {
+  flex: 1;
+  overflow: auto;
+}
+.win-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border-color2);
+  flex-shrink: 0;
+}
+html.glass-on .win-browser-bar {
+  background: color-mix(in srgb, var(--surface2) calc(var(--glass-opacity) * 100%), transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+.win-browser-bar .win-omni {
+  flex: 1;
+  height: 28px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color2);
+  background: var(--background-color);
+  color: var(--text-color);
+  padding: 0 12px;
+  font-size: 12px;
+  outline: none;
+  min-width: 0;
+}
+.win-browser-bar .win-omni:focus {
+  border-color: var(--accent);
+}
+.win-browser-bar .tb-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
 }
 .app-window.maximized {
   inset: 0 !important;
@@ -813,6 +982,7 @@ a { color: var(--accent); }
 </style>
 </head>
 <body>
+<div id="desktop-bg"><div class="dim"></div></div>
 <div id="boot">
   <div class="logo">n3xn</div>
   <div class="spin"></div>
@@ -878,6 +1048,51 @@ a { color: var(--accent); }
         <input id="set-allow" type="text" placeholder="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
       </div>
       <label class="chk"><input type="checkbox" id="set-allowfs" checked /> allowfullscreen on iframes</label>
+      <label class="chk"><input type="checkbox" id="set-glass" checked /> Glassmorphism UI</label>
+      <label class="chk"><input type="checkbox" id="set-prompt-fs" checked /> Prompt for OS fullscreen on load</label>
+      <label class="chk"><input type="checkbox" id="set-inject-dt" checked /> Inject DevTools into same-origin iframes (unblocker)</label>
+      <div class="field">
+        <label>Desktop background URL (image / GIF)</label>
+        <input id="set-desktop-bg" type="text" placeholder="https://…/wallpaper.gif or leave blank" />
+      </div>
+      <div class="field">
+        <label>Background fit</label>
+        <select id="set-desktop-fit">
+          <option value="cover">Cover</option>
+          <option value="contain">Contain</option>
+          <option value="fill">Fill</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Background position</label>
+        <select id="set-desktop-pos">
+          <option value="center">Center</option>
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+          <option value="left">Left</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Background brightness <span id="lbl-db">1</span></label>
+        <input id="set-desktop-brightness" type="range" min="0.3" max="1.5" step="0.05" value="1" />
+      </div>
+      <div class="field">
+        <label>Background blur (px) <span id="lbl-dbl">0</span></label>
+        <input id="set-desktop-blur" type="range" min="0" max="24" step="1" value="0" />
+      </div>
+      <div class="field">
+        <label>Background dim <span id="lbl-dd">0.35</span></label>
+        <input id="set-desktop-dim" type="range" min="0" max="0.85" step="0.05" value="0.35" />
+      </div>
+      <div class="field">
+        <label>Glass blur (px) <span id="lbl-gb">16</span></label>
+        <input id="set-glass-blur" type="range" min="0" max="40" step="1" value="16" />
+      </div>
+      <div class="field">
+        <label>Glass opacity <span id="lbl-go">0.72</span></label>
+        <input id="set-glass-opacity" type="range" min="0.3" max="1" step="0.02" value="0.72" />
+      </div>
       <div class="field">
         <label>Data</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -968,23 +1183,49 @@ a { color: var(--accent); }
   ];
 
   /* Built-in preinstalled apps (also tries /preinstalled.json) */
-const BUILTIN_APPS = [
-  { id: 'app-settings', name: 'Settings', url: 'about:settings', icon: '⚙', system: true, shelf: true },
-  { id: 'app-browser', name: 'Browser', url: 'about:home', icon: '🌐', system: true, shelf: true },
-  { id: 'app-files', name: 'Files', url: 'about:files', icon: '📁', system: true, shelf: false },
-  { id: 'app-terminal', name: 'Terminal', url: 'about:terminal', icon: '⬛', system: true, shelf: false },
-  { id: 'app-store', name: 'App Store', url: 'about:store', icon: '🛒', system: true, shelf: false },
-  { id: 'app-ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔎', shelf: true },
-  { id: 'app-yt', name: 'YouTube', url: 'https://www.youtube.com', icon: '▶', shelf: false },
-  { id: 'app-gh', name: 'GitHub', url: 'https://github.com', icon: '🐙', shelf: false },
-  { id: 'app-wiki', name: 'Wikipedia', url: 'https://wikipedia.org', icon: '📖', shelf: false },
-  { id: 'app-discord', name: 'Discord', url: 'https://discord.com/app', icon: '💬', shelf: false },
-  { id: 'app-spotify', name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵', shelf: false },
-  { id: 'app-gmail', name: 'Gmail', url: 'https://mail.google.com', icon: '✉', shelf: false },
-  { id: 'app-maps', name: 'Maps', url: 'https://maps.google.com', icon: '🗺', shelf: false },
-  { id: 'app-calc', name: 'Calculator', url: 'about:calc', icon: '🔢', system: true, shelf: false },
-  { id: 'app-n3xn-vfs', name: 'n3xn_VFS', url: 'https://n3xn-vfs.pages.dev/', icon: '🗂', shelf: false }
-];
+  const BUILTIN_APPS = [
+    { id: 'app-settings', name: 'Settings', url: 'about:settings', icon: '⚙', system: true, shelf: true },
+    { id: 'app-browser', name: 'Browser', url: 'about:browser', icon: '🌐', system: true, shelf: true, kind: 'browser' },
+    { id: 'app-files', name: 'Files', url: 'about:files', icon: '📁', system: true, shelf: false },
+    { id: 'app-terminal', name: 'Terminal', url: 'about:terminal', icon: '⬛', system: true, shelf: false },
+    { id: 'app-store', name: 'App Store', url: 'about:store', icon: '🛒', system: true, shelf: false },
+    { id: 'app-ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔎', shelf: true },
+    { id: 'app-yt', name: 'YouTube', url: 'https://www.youtube.com', icon: '▶', shelf: false },
+    { id: 'app-gh', name: 'GitHub', url: 'https://github.com', icon: '🐙', shelf: false },
+    { id: 'app-wiki', name: 'Wikipedia', url: 'https://wikipedia.org', icon: '📖', shelf: false },
+    { id: 'app-discord', name: 'Discord', url: 'https://discord.com/app', icon: '💬', shelf: false },
+    { id: 'app-spotify', name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵', shelf: false },
+    { id: 'app-gmail', name: 'Gmail', url: 'https://mail.google.com', icon: '✉', shelf: false },
+    { id: 'app-maps', name: 'Maps', url: 'https://maps.google.com', icon: '🗺', shelf: false },
+    { id: 'app-calc', name: 'Calculator', url: 'about:calc', icon: '🔢', system: true, shelf: false },
+    { id: 'app-n3xn-vfs', name: 'n3xn_VFS', url: 'https://n3xn-vfs.pages.dev/', icon: '🗂', shelf: false },
+    { id: 'app-macvg', name: 'MacVG', url: 'https://kbsigmaboy67.github.io/macvg', icon: '🎮', shelf: false },
+    { id: 'app-seraph', name: 'Seraph', url: 'https://seraph-ultimate-v2-kqllvuugx-trionicallys-projects.vercel.app/', icon: '🕹', shelf: false },
+    { id: 'Minecraft', name: 'Minecraft', url: 'https://kbsigmaboy67.github.io/mc/1.8.html', icon: '⛏', shelf: false },
+  ];
+
+  function mergeBuiltinApps(existing) {
+    const byId = new Map((existing || []).map((a) => [a.id, a]));
+    BUILTIN_APPS.forEach((b) => {
+      if (!byId.has(b.id)) {
+        byId.set(b.id, { ...b });
+        return;
+      }
+      const cur = byId.get(b.id);
+      if (b.system) {
+        cur.system = true;
+        cur.name = b.name;
+        cur.url = b.url;
+        cur.icon = b.icon;
+        if (b.kind) cur.kind = b.kind;
+      } else {
+        if (!cur.icon) cur.icon = b.icon;
+        if (!cur.url) cur.url = b.url;
+        if (!cur.name) cur.name = b.name;
+      }
+    });
+    return Array.from(byId.values());
+  }
 
   const state = {
     tabs: [],
@@ -1001,6 +1242,20 @@ const BUILTIN_APPS = [
       cloakNewTabs: false,
       defaultAllow: DEFAULT_ALLOW,
       allowFullscreen: true,
+      glass: true,
+      glassBlur: 16,
+      glassOpacity: 0.72,
+      desktopBg: '',
+      desktopFit: 'cover',
+      desktopPos: 'center',
+      desktopBrightness: 1,
+      desktopBlur: 0,
+      desktopDim: 0.35,
+      promptFullscreen: true,
+      injectDevtoolsIntoFrames: true,
+      globalBrightness: 1,
+      globalContrast: 1,
+      globalSaturate: 1,
     },
     editingTabId: null,
   };
@@ -1064,6 +1319,10 @@ const BUILTIN_APPS = [
         cloaked: t.cloaked,
         allow: t.allow,
         allowFullscreen: t.allowFullscreen,
+        brightness: t.brightness,
+        contrast: t.contrast,
+        saturate: t.saturate,
+        glass: t.glass,
         isHome: t.isHome,
       }));
       await Promise.all([
@@ -1104,7 +1363,7 @@ const BUILTIN_APPS = [
       winIdSeq = seq.winIdSeq || 1;
     }
     if (Array.isArray(apps) && apps.length) {
-      state.apps = apps;
+      state.apps = mergeBuiltinApps(apps);
     } else {
       state.apps = BUILTIN_APPS.map((a) => ({ ...a }));
     }
@@ -1117,7 +1376,7 @@ const BUILTIN_APPS = [
   /* Try external preinstalled.json */
   async function loadPreinstalled() {
     try {
-      const r = await fetch('/n3xn_OS/preinstalled.json' || '/preinstalled.json', { cache: 'no-store' });
+      const r = await fetch('/preinstalled.json', { cache: 'no-store' });
       if (!r.ok) return;
       const data = await r.json();
       const list = Array.isArray(data) ? data : (data.apps || data.preinstalled || []);
@@ -1207,11 +1466,16 @@ const BUILTIN_APPS = [
       cloaked: opts.cloaked != null ? opts.cloaked : !!state.settings.cloakNewTabs,
       allow: opts.allow != null ? opts.allow : state.settings.defaultAllow,
       allowFullscreen: opts.allowFullscreen != null ? opts.allowFullscreen : !!state.settings.allowFullscreen,
+      brightness: opts.brightness != null ? opts.brightness : 1,
+      contrast: opts.contrast != null ? opts.contrast : 1,
+      saturate: opts.saturate != null ? opts.saturate : 1,
+      glass: opts.glass != null ? opts.glass : true,
       isHome: false,
       historyStack: [],
       historyIndex: -1,
       _iframe: null,
       _wrap: null,
+      _dtInjected: false,
     };
     if (tab.url === 'about:home' || !tab.url || isAbout(tab.url) && tab.url === 'about:home') {
       tab.isHome = true;
@@ -1248,6 +1512,14 @@ const BUILTIN_APPS = [
       const title = document.createElement('span');
       title.className = 'title';
       title.textContent = displayTitle(tab);
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'chrome-menu-btn';
+      menuBtn.textContent = '⋮';
+      menuBtn.title = 'Tab menu';
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSurfaceMenu(e, { type: 'tab', tab });
+      });
       const close = document.createElement('button');
       close.className = 'close';
       close.textContent = '×';
@@ -1256,7 +1528,7 @@ const BUILTIN_APPS = [
         e.stopPropagation();
         closeTab(tab.id);
       });
-      el.append(fav, title, close);
+      el.append(fav, title, menuBtn, close);
       el.addEventListener('click', () => activateTab(tab.id));
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -1264,6 +1536,16 @@ const BUILTIN_APPS = [
       });
       strip.insertBefore(el, newBtn);
     });
+  }
+
+  function applySurfaceFilter(el, surface) {
+    if (!el) return;
+    const b = surface.brightness != null ? surface.brightness : 1;
+    const c = surface.contrast != null ? surface.contrast : 1;
+    const s = surface.saturate != null ? surface.saturate : 1;
+    el.style.setProperty('--surface-brightness', String(b));
+    el.style.setProperty('--surface-contrast', String(c));
+    el.style.setProperty('--surface-saturate', String(s));
   }
 
   function ensureFrame(tab) {
@@ -1292,14 +1574,42 @@ const BUILTIN_APPS = [
       iframe.addEventListener('load', () => {
         wrap.classList.remove('loading');
         tryUpdateTabMeta(tab, iframe);
+        tryInjectDevtoolsIntoFrame(iframe, tab);
       });
       iframe.addEventListener('error', () => wrap.classList.remove('loading'));
       tab._iframe = iframe;
       wrap.appendChild(iframe);
     }
+    applySurfaceFilter(wrap, tab);
     tab._wrap = wrap;
     document.getElementById('content').appendChild(wrap);
     return wrap;
+  }
+
+  function tryInjectDevtoolsIntoFrame(iframe, surface) {
+    if (!state.settings.injectDevtoolsIntoFrames) return;
+    if (surface && surface._dtInjected) return;
+    try {
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      if (!doc || !win) return;
+      // same-origin only (typical when OS is behind an unblocker/proxy)
+      if (doc.getElementById('n3xn-dt-injected')) return;
+      const mark = doc.createElement('meta');
+      mark.id = 'n3xn-dt-injected';
+      (doc.head || doc.documentElement).appendChild(mark);
+      const css = doc.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.css';
+      (doc.head || doc.documentElement).appendChild(css);
+      const s = doc.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.js';
+      s.async = true;
+      (doc.head || doc.documentElement).appendChild(s);
+      if (surface) surface._dtInjected = true;
+    } catch {
+      // cross-origin — expected outside unblocker
+    }
   }
 
   function tryUpdateTabMeta(tab, iframe) {
@@ -1645,37 +1955,103 @@ const BUILTIN_APPS = [
   function openApp(app) {
     if (app.url === 'about:settings' || app.id === 'app-settings') {
       openSettings();
-      return;
-    }
-    if (app.url === 'about:home' || app.id === 'app-browser') {
-      const t = createTab({ url: 'about:home' });
-      activateTab(t.id);
       closeLauncher();
       return;
     }
-    // Independent window (URL hidden from browser chrome)
+    // Browser is a first-class multi-window app (own chrome + all window options)
+    if (app.id === 'app-browser' || app.kind === 'browser' || app.url === 'about:browser') {
+      openAppWindow({
+        ...app,
+        kind: 'browser',
+        url: state.settings.homepage || 'about:home',
+        cloak: app.cloak != null ? app.cloak : false,
+      });
+      closeLauncher();
+      return;
+    }
     openAppWindow(app);
     closeLauncher();
   }
 
   function openAppWindow(app) {
     const id = uid('w');
+    const isBrowser = app.kind === 'browser' || app.id === 'app-browser';
     const win = {
       id,
       appId: app.id,
-      name: app.name,
-      url: app.url,
-      icon: app.icon,
+      name: app.name || (isBrowser ? 'Browser' : 'App'),
+      url: app.url || (isBrowser ? (state.settings.homepage || 'about:home') : 'about:blank'),
+      icon: app.icon || (isBrowser ? '🌐' : '📦'),
+      kind: isBrowser ? 'browser' : (app.kind || 'app'),
       cloak: !!app.cloak,
-      x: 80 + (state.windows.length % 6) * 28,
-      y: 60 + (state.windows.length % 6) * 28,
-      w: 900,
-      h: 600,
+      brightness: 1,
+      contrast: 1,
+      saturate: 1,
+      glass: true,
+      x: 60 + (state.windows.length % 7) * 32,
+      y: 48 + (state.windows.length % 7) * 28,
+      w: isBrowser ? 1040 : 900,
+      h: isBrowser ? 700 : 600,
       maximized: false,
       minimized: false,
+      _iframe: null,
+      _dtInjected: false,
+      _browserOmni: null,
     };
     state.windows.push(win);
     renderWindow(win);
+  }
+
+  function navigateBrowserWindow(win, el, rawUrl) {
+    const url = normalizeUrl(rawUrl);
+    win.url = url;
+    const body = el.querySelector('.win-body');
+    if (!body) return;
+    body.innerHTML = '';
+    win._iframe = null;
+    win._dtInjected = false;
+    if (isAbout(url)) {
+      const fakeTab = { url, id: win.id };
+      if (url === 'about:home' || url === 'about:browser') {
+        // lightweight new-tab page inside browser window
+        const page = document.createElement('div');
+        page.className = 'home-page';
+        page.style.padding = '20px';
+        page.innerHTML = `<h1 style="font-size:28px">New Tab</h1><p class="sub">Type a URL in the address bar</p>`;
+        const grid = document.createElement('div');
+        grid.className = 'apps-grid';
+        state.apps.filter((a) => a.shelf || a.id === 'app-ddg').slice(0, 8).forEach((a) => {
+          grid.appendChild(makeAppTile(a, () => navigateBrowserWindow(win, el, a.url)));
+        });
+        page.appendChild(grid);
+        body.appendChild(page);
+      } else {
+        body.appendChild(buildAboutPage(fakeTab));
+      }
+    } else {
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.setAttribute('allow', state.settings.defaultAllow);
+      if (state.settings.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
+      iframe.addEventListener('load', () => {
+        tryInjectDevtoolsIntoFrame(iframe, win);
+        try {
+          const doc = iframe.contentDocument;
+          if (doc && doc.title && !win.cloak) {
+            win.name = doc.title;
+            const nameEl = el.querySelector('.win-name');
+            if (nameEl) nameEl.textContent = win.name;
+          }
+        } catch {}
+      });
+      win._iframe = iframe;
+      body.appendChild(iframe);
+    }
+    const omni = el.querySelector('.win-omni');
+    if (omni) omni.value = win.cloak ? '' : (isAbout(url) ? '' : url);
+    const nameEl = el.querySelector('.win-name');
+    if (nameEl) nameEl.textContent = win.cloak ? (win.name || 'Browser') : ((win.name || 'Browser') + (isAbout(url) ? '' : ' — ' + url));
+    applySurfaceFilter(el, win);
   }
 
   function renderWindow(win) {
@@ -1685,16 +2061,24 @@ const BUILTIN_APPS = [
       el = document.createElement('div');
       el.className = 'app-window';
       el.dataset.wid = win.id;
+      const isBrowser = win.kind === 'browser';
       el.innerHTML = `
         <div class="win-titlebar">
           <span class="win-icon"></span>
           <span class="win-name"></span>
           <div class="win-ctrls">
+            <button class="chrome-menu-btn win-menu" title="Window menu">⋮</button>
             <button class="win-min" title="Minimize">—</button>
             <button class="win-max" title="Maximize">□</button>
             <button class="win-close" title="Close">✕</button>
           </div>
         </div>
+        ${isBrowser ? `<div class="win-browser-bar">
+          <button class="tb-btn win-back" title="Back">←</button>
+          <button class="tb-btn win-reload" title="Reload">↻</button>
+          <input class="win-omni" type="text" spellcheck="false" placeholder="Search or enter URL" />
+          <button class="tb-btn win-go" title="Go">→</button>
+        </div>` : ''}
         <div class="win-body"></div>
         <div class="resize-handle"></div>`;
       root.appendChild(el);
@@ -1702,7 +2086,7 @@ const BUILTIN_APPS = [
       const bar = el.querySelector('.win-titlebar');
       let drag = null;
       bar.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button') || win.maximized) return;
+        if (e.target.closest('button') || e.target.closest('input') || win.maximized) return;
         drag = { ox: e.clientX - win.x, oy: e.clientY - win.y };
         e.preventDefault();
       });
@@ -1727,6 +2111,10 @@ const BUILTIN_APPS = [
         el.classList.toggle('maximized', win.maximized);
         layoutWindow(win, el);
       });
+      el.querySelector('.win-menu').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSurfaceMenu(e, { type: 'window', win, el });
+      });
 
       const handle = el.querySelector('.resize-handle');
       let resizing = null;
@@ -1743,26 +2131,44 @@ const BUILTIN_APPS = [
       });
       window.addEventListener('mouseup', () => { resizing = null; });
 
-      // Body content
-      const body = el.querySelector('.win-body');
-      if (isAbout(win.url)) {
-        const fakeTab = { url: win.url, id: win.id };
-        body.appendChild(buildAboutPage(fakeTab));
+      if (isBrowser) {
+        const omni = el.querySelector('.win-omni');
+        const go = () => navigateBrowserWindow(win, el, omni.value);
+        omni.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+        el.querySelector('.win-go').addEventListener('click', go);
+        el.querySelector('.win-reload').addEventListener('click', () => navigateBrowserWindow(win, el, win.url));
+        el.querySelector('.win-back').addEventListener('click', () => navigateBrowserWindow(win, el, 'about:home'));
+        navigateBrowserWindow(win, el, win.url === 'about:browser' ? 'about:home' : win.url);
       } else {
-        const iframe = document.createElement('iframe');
-        iframe.src = win.url;
-        iframe.setAttribute('allow', state.settings.defaultAllow);
-        if (state.settings.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
-        body.appendChild(iframe);
+        const body = el.querySelector('.win-body');
+        if (isAbout(win.url)) {
+          const fakeTab = { url: win.url, id: win.id };
+          body.appendChild(buildAboutPage(fakeTab));
+        } else {
+          const iframe = document.createElement('iframe');
+          iframe.src = win.url;
+          iframe.setAttribute('allow', state.settings.defaultAllow);
+          if (state.settings.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
+          iframe.addEventListener('load', () => tryInjectDevtoolsIntoFrame(iframe, win));
+          win._iframe = iframe;
+          body.appendChild(iframe);
+        }
       }
     }
-    el.querySelector('.win-name').textContent = win.cloak ? win.name : (win.name + ' — ' + win.url);
+    if (win.cloak) {
+      el.querySelector('.win-name').textContent = win.name || 'App';
+    } else if (win.kind === 'browser') {
+      el.querySelector('.win-name').textContent = win.name || 'Browser';
+    } else {
+      el.querySelector('.win-name').textContent = win.name + ' — ' + win.url;
+    }
     const iconEl = el.querySelector('.win-icon');
     if (win.icon && (String(win.icon).startsWith('http') || String(win.icon).startsWith('data:'))) {
       iconEl.innerHTML = `<img src="${win.icon}" style="width:16px;height:16px;border-radius:3px" />`;
     } else {
       iconEl.textContent = win.icon || '📦';
     }
+    applySurfaceFilter(el, win);
     layoutWindow(win, el);
   }
 
@@ -1820,17 +2226,34 @@ const BUILTIN_APPS = [
 
   function openSettings() {
     const m = document.getElementById('modal-settings');
-    document.getElementById('set-search').value = state.settings.searchEngine;
-    document.getElementById('set-homepage').value = state.settings.homepage || '';
-    document.getElementById('set-bmbar').checked = !!state.settings.showBookmarksBar;
-    document.getElementById('set-cloak-default').checked = !!state.settings.cloakNewTabs;
-    document.getElementById('set-allow').value = state.settings.defaultAllow || DEFAULT_ALLOW;
-    document.getElementById('set-allowfs').checked = !!state.settings.allowFullscreen;
+    const s = state.settings;
+    document.getElementById('set-search').value = s.searchEngine;
+    document.getElementById('set-homepage').value = s.homepage || '';
+    document.getElementById('set-bmbar').checked = !!s.showBookmarksBar;
+    document.getElementById('set-cloak-default').checked = !!s.cloakNewTabs;
+    document.getElementById('set-allow').value = s.defaultAllow || DEFAULT_ALLOW;
+    document.getElementById('set-allowfs').checked = !!s.allowFullscreen;
+    document.getElementById('set-glass').checked = s.glass !== false;
+    document.getElementById('set-prompt-fs').checked = s.promptFullscreen !== false;
+    document.getElementById('set-inject-dt').checked = s.injectDevtoolsIntoFrames !== false;
+    document.getElementById('set-desktop-bg').value = s.desktopBg || '';
+    document.getElementById('set-desktop-fit').value = s.desktopFit || 'cover';
+    document.getElementById('set-desktop-pos').value = s.desktopPos || 'center';
+    document.getElementById('set-desktop-brightness').value = s.desktopBrightness != null ? s.desktopBrightness : 1;
+    document.getElementById('set-desktop-blur').value = s.desktopBlur || 0;
+    document.getElementById('set-desktop-dim').value = s.desktopDim != null ? s.desktopDim : 0.35;
+    document.getElementById('set-glass-blur').value = s.glassBlur != null ? s.glassBlur : 16;
+    document.getElementById('set-glass-opacity').value = s.glassOpacity != null ? s.glassOpacity : 0.72;
+    document.getElementById('lbl-db').textContent = document.getElementById('set-desktop-brightness').value;
+    document.getElementById('lbl-dbl').textContent = document.getElementById('set-desktop-blur').value;
+    document.getElementById('lbl-dd').textContent = document.getElementById('set-desktop-dim').value;
+    document.getElementById('lbl-gb').textContent = document.getElementById('set-glass-blur').value;
+    document.getElementById('lbl-go').textContent = document.getElementById('set-glass-opacity').value;
     const sw = document.getElementById('theme-swatches');
     sw.innerHTML = '';
     THEMES.forEach((t) => {
       const b = document.createElement('button');
-      b.className = 'swatch' + ((state.settings.theme || '') === t.id ? ' active' : '');
+      b.className = 'swatch' + ((s.theme || '') === t.id ? ' active' : '');
       b.style.background = t.color;
       b.dataset.theme = t.id;
       b.title = t.name;
@@ -1939,6 +2362,8 @@ const BUILTIN_APPS = [
       { label: 'Reload', fn: () => navigateTab(tab, tab.url, { push: false }) },
       { label: tab.cloaked ? 'Uncloak tab' : 'Cloak Tab…', fn: () => cloakTab(tab) },
       { label: 'Edit title / favicon…', fn: () => openTabEdit(tab) },
+      { label: 'Tab menu (⋮)…', fn: () => openSurfaceMenu(e, { type: 'tab', tab }) },
+      { label: 'Fullscreen tab', fn: () => requestFs(tab._iframe || tab._wrap) },
       { label: 'Duplicate', fn: () => { const t = createTab({ url: tab.url, cloaked: tab.cloaked, allow: tab.allow, allowFullscreen: tab.allowFullscreen }); activateTab(t.id); } },
       { label: 'Open in new tab', fn: () => { const t = createTab({ url: tab.url }); activateTab(t.id); } },
       { sep: true },
@@ -2152,6 +2577,172 @@ const BUILTIN_APPS = [
     scheduleSave();
   }
 
+  /* ── Surface ⋮ menu (Chrome-style) + visuals + fullscreen ── */
+  function openSurfaceMenu(e, ctx) {
+    const isTab = ctx.type === 'tab';
+    const surface = isTab ? ctx.tab : ctx.win;
+    const items = [];
+    if (isTab) {
+      items.push(
+        { label: surface.cloaked ? 'Uncloak (show URL)' : 'Hide URL / cloak', fn: () => cloakTab(surface) },
+        { label: 'Edit title / favicon…', fn: () => openTabEdit(surface) },
+      );
+    } else {
+      items.push(
+        { label: surface.cloak ? 'Show URL in title / omnibox' : 'Hide URL (cloak)', fn: () => {
+          surface.cloak = !surface.cloak;
+          if (ctx.el) {
+            const omni = ctx.el.querySelector('.win-omni');
+            if (omni) omni.value = surface.cloak ? '' : (isAbout(surface.url) ? '' : surface.url);
+            const nameEl = ctx.el.querySelector('.win-name');
+            if (nameEl) nameEl.textContent = surface.cloak ? (surface.name || 'App') : (surface.kind === 'browser' ? (surface.name || 'Browser') : (surface.name + ' — ' + surface.url));
+          }
+        }},
+      );
+      if (surface.kind === 'browser') {
+        items.push(
+          { label: 'New Browser window', fn: () => openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐' }) },
+          { label: 'Home / New Tab page', fn: () => ctx.el && navigateBrowserWindow(surface, ctx.el, 'about:home') },
+          { label: 'Reload page', fn: () => ctx.el && navigateBrowserWindow(surface, ctx.el, surface.url) },
+        );
+      }
+    }
+    items.push(
+      { sep: true },
+      { label: 'Brightness / color…', fn: () => {
+        openGenericEdit(isTab ? 'Tab appearance' : 'Window appearance', [
+          { key: 'brightness', label: 'Brightness (0.4–1.6)', value: String(surface.brightness != null ? surface.brightness : 1) },
+          { key: 'contrast', label: 'Contrast (0.5–1.5)', value: String(surface.contrast != null ? surface.contrast : 1) },
+          { key: 'saturate', label: 'Saturation (0–2)', value: String(surface.saturate != null ? surface.saturate : 1) },
+        ], (data) => {
+          surface.brightness = Math.min(1.6, Math.max(0.4, parseFloat(data.brightness) || 1));
+          surface.contrast = Math.min(1.5, Math.max(0.5, parseFloat(data.contrast) || 1));
+          surface.saturate = Math.min(2, Math.max(0, parseFloat(data.saturate) || 1));
+          if (isTab && surface._wrap) applySurfaceFilter(surface._wrap, surface);
+          if (!isTab && ctx.el) applySurfaceFilter(ctx.el, surface);
+          scheduleSave();
+          toast('Appearance updated');
+        });
+      }},
+      { label: 'Reset appearance', fn: () => {
+        surface.brightness = 1; surface.contrast = 1; surface.saturate = 1;
+        if (isTab && surface._wrap) applySurfaceFilter(surface._wrap, surface);
+        if (!isTab && ctx.el) applySurfaceFilter(ctx.el, surface);
+        scheduleSave();
+      }},
+      { sep: true },
+      { label: 'Glass on this surface', fn: () => {
+        surface.glass = surface.glass === false ? true : false;
+        toast(surface.glass !== false ? 'Glass enabled (global still applies)' : 'Per-surface glass flag off');
+        scheduleSave();
+      }},
+      { label: 'Desktop & glass settings…', fn: openSettings },
+      { sep: true },
+      { label: 'Fullscreen this ' + (isTab ? 'tab' : 'window'), fn: () => {
+        const target = isTab
+          ? (surface._iframe || surface._wrap)
+          : (ctx.el || surface._iframe);
+        requestFs(target);
+      }},
+      { label: 'Fullscreen entire OS', fn: () => requestFs(document.documentElement) },
+      { sep: true },
+    );
+    if (isTab) {
+      items.push(
+        { label: 'Reload', fn: () => navigateTab(surface, surface.url, { push: false }) },
+        { label: 'Install as app…', fn: () => openInstallApp(surface) },
+        { label: 'Close tab', danger: true, fn: () => closeTab(surface.id) },
+      );
+    } else {
+      items.push(
+        { label: 'Open URL in shell tab', fn: () => { const t = createTab({ url: surface.url }); activateTab(t.id); } },
+        { label: 'Install this URL as app…', fn: () => openInstallApp({ url: surface.url, title: surface.name, customFavicon: surface.icon }) },
+        { label: 'Close window', danger: true, fn: () => ctx.el && ctx.el.querySelector('.win-close').click() },
+      );
+    }
+    showContextMenu(e, items);
+  }
+
+  function requestFs(el) {
+    if (!el) el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (!req) { toast('Fullscreen not supported'); return; }
+    Promise.resolve(req.call(el)).catch((err) => toast('Fullscreen blocked: ' + (err.message || err)));
+  }
+
+  function exitFs() {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document).catch(() => {});
+  }
+
+  function applyDesktopBackground() {
+    const root = document.getElementById('desktop-bg');
+    if (!root) return;
+    const s = state.settings;
+    document.documentElement.style.setProperty('--desktop-fit', s.desktopFit || 'cover');
+    document.documentElement.style.setProperty('--desktop-pos', s.desktopPos || 'center');
+    document.documentElement.style.setProperty('--desktop-brightness', String(s.desktopBrightness != null ? s.desktopBrightness : 1));
+    document.documentElement.style.setProperty('--desktop-blur', (s.desktopBlur || 0) + 'px');
+    document.documentElement.style.setProperty('--desktop-dim', String(s.desktopDim != null ? s.desktopDim : 0.35));
+    let media = root.querySelector('img');
+    const url = (s.desktopBg || '').trim();
+    if (!url) {
+      if (media) media.remove();
+      root.style.background = 'var(--background-color)';
+      return;
+    }
+    if (!media) {
+      media = document.createElement('img');
+      media.alt = '';
+      media.decoding = 'async';
+      root.insertBefore(media, root.querySelector('.dim'));
+    }
+    if (media.src !== url) media.src = url;
+    root.style.background = 'var(--background-color)';
+  }
+
+  function applyGlass() {
+    const s = state.settings;
+    document.documentElement.classList.toggle('glass-on', s.glass !== false);
+    document.documentElement.style.setProperty('--glass-blur', (s.glassBlur != null ? s.glassBlur : 16) + 'px');
+    document.documentElement.style.setProperty('--glass-opacity', String(s.glassOpacity != null ? s.glassOpacity : 0.72));
+  }
+
+  function showFullscreenPrompt() {
+    if (!state.settings.promptFullscreen) return;
+    if (document.fullscreenElement) return;
+    try {
+      if (sessionStorage.getItem('n3xn_fs_prompted') === '1') return;
+    } catch {}
+    const overlay = document.createElement('div');
+    overlay.className = 'fs-prompt';
+    overlay.innerHTML = `
+      <div class="card">
+        <h2>Go fullscreen?</h2>
+        <p>Run n3xn in true fullscreen for a ChromeOS-like experience. You can also fullscreen individual tabs or app windows from their ⋮ menu.</p>
+        <div class="row">
+          <button class="btn primary" data-fs-yes>Enter fullscreen</button>
+          <button class="btn" data-fs-no>Not now</button>
+        </div>
+        <label class="chk" style="justify-content:center;margin-top:14px">
+          <input type="checkbox" data-fs-never /> Don't ask again
+        </label>
+      </div>`;
+    document.body.appendChild(overlay);
+    const finish = (enter) => {
+      const never = overlay.querySelector('[data-fs-never]').checked;
+      if (never) {
+        state.settings.promptFullscreen = false;
+        scheduleSave();
+      }
+      try { sessionStorage.setItem('n3xn_fs_prompted', '1'); } catch {}
+      overlay.remove();
+      if (enter) requestFs(document.documentElement);
+    };
+    overlay.querySelector('[data-fs-yes]').addEventListener('click', () => finish(true));
+    overlay.querySelector('[data-fs-no]').addEventListener('click', () => finish(false));
+  }
+
   function openTabEdit(tab) {
     state.editingTabId = tab.id;
     document.getElementById('edit-title').value = tab.customTitle || '';
@@ -2163,9 +2754,17 @@ const BUILTIN_APPS = [
   }
 
   function openInstallApp(fromTab) {
-    document.getElementById('inst-name').value = fromTab ? displayTitle(fromTab) : '';
-    document.getElementById('inst-url').value = fromTab ? fromTab.url : '';
-    document.getElementById('inst-icon').value = fromTab ? (fromTab.customFavicon || fromTab.favicon || '') : '';
+    let name = '';
+    let url = '';
+    let icon = '';
+    if (fromTab) {
+      name = fromTab.name || fromTab.customTitle || fromTab.title || displayTitle(fromTab) || '';
+      url = fromTab.url || '';
+      icon = fromTab.icon || fromTab.customFavicon || fromTab.favicon || '';
+    }
+    document.getElementById('inst-name').value = name;
+    document.getElementById('inst-url').value = url;
+    document.getElementById('inst-icon').value = icon;
     document.getElementById('inst-cloak').checked = true;
     document.getElementById('inst-shelf').checked = true;
     document.getElementById('modal-install-app').classList.add('open');
@@ -2185,6 +2784,11 @@ const BUILTIN_APPS = [
       { label: 'Install page as app…', fn: () => openInstallApp(getActiveTab()) },
       { sep: true },
       { label: 'Settings', fn: openSettings },
+      { label: 'Fullscreen OS', fn: () => requestFs(document.documentElement) },
+      { label: 'Fullscreen active tab', fn: () => {
+        const t = getActiveTab();
+        if (t) requestFs(t._iframe || t._wrap);
+      }},
       { label: 'Open n3xn DevTools', fn: () => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F12', bubbles: true }));
         toast('DevTools: use the floating ⚙ if injected');
@@ -2467,8 +3071,54 @@ const BUILTIN_APPS = [
       state.settings.cloakNewTabs = document.getElementById('set-cloak-default').checked;
       state.settings.defaultAllow = document.getElementById('set-allow').value.trim() || DEFAULT_ALLOW;
       state.settings.allowFullscreen = document.getElementById('set-allowfs').checked;
+      state.settings.glass = document.getElementById('set-glass').checked;
+      state.settings.promptFullscreen = document.getElementById('set-prompt-fs').checked;
+      state.settings.injectDevtoolsIntoFrames = document.getElementById('set-inject-dt').checked;
+      state.settings.desktopBg = document.getElementById('set-desktop-bg').value.trim();
+      state.settings.desktopFit = document.getElementById('set-desktop-fit').value;
+      state.settings.desktopPos = document.getElementById('set-desktop-pos').value;
+      state.settings.desktopBrightness = parseFloat(document.getElementById('set-desktop-brightness').value);
+      state.settings.desktopBlur = parseFloat(document.getElementById('set-desktop-blur').value);
+      state.settings.desktopDim = parseFloat(document.getElementById('set-desktop-dim').value);
+      state.settings.glassBlur = parseFloat(document.getElementById('set-glass-blur').value);
+      state.settings.glassOpacity = parseFloat(document.getElementById('set-glass-opacity').value);
+      applyDesktopBackground();
+      applyGlass();
       renderBookmarksBar();
       scheduleSave();
+    });
+
+    // Live preview ranges in settings
+    [
+      ['set-desktop-brightness', 'lbl-db'],
+      ['set-desktop-blur', 'lbl-dbl'],
+      ['set-desktop-dim', 'lbl-dd'],
+      ['set-glass-blur', 'lbl-gb'],
+      ['set-glass-opacity', 'lbl-go'],
+    ].forEach(([id, lbl]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        document.getElementById(lbl).textContent = el.value;
+        if (id.startsWith('set-desktop')) {
+          state.settings.desktopBrightness = parseFloat(document.getElementById('set-desktop-brightness').value);
+          state.settings.desktopBlur = parseFloat(document.getElementById('set-desktop-blur').value);
+          state.settings.desktopDim = parseFloat(document.getElementById('set-desktop-dim').value);
+          applyDesktopBackground();
+        } else {
+          state.settings.glassBlur = parseFloat(document.getElementById('set-glass-blur').value);
+          state.settings.glassOpacity = parseFloat(document.getElementById('set-glass-opacity').value);
+          applyGlass();
+        }
+      });
+    });
+    document.getElementById('set-desktop-bg').addEventListener('change', () => {
+      state.settings.desktopBg = document.getElementById('set-desktop-bg').value.trim();
+      applyDesktopBackground();
+    });
+    document.getElementById('set-glass').addEventListener('change', (e) => {
+      state.settings.glass = e.target.checked;
+      applyGlass();
     });
 
     document.getElementById('btn-export').addEventListener('click', exportData);
@@ -2591,6 +3241,8 @@ const BUILTIN_APPS = [
       console.error('n3xn IDB', e);
     }
     applyTheme(state.settings.theme);
+    applyDesktopBackground();
+    applyGlass();
     wire();
     renderShelf();
     renderBookmarksBar();
@@ -2601,10 +3253,13 @@ const BUILTIN_APPS = [
       const t = createTab({ url: 'about:home' });
       activateTab(t.id);
     } else {
-      // Rehydrate tabs without unloading — create frames lazily on activate
       state.tabs.forEach((t) => {
         t._iframe = null;
         t._wrap = null;
+        t._dtInjected = false;
+        if (t.brightness == null) t.brightness = 1;
+        if (t.contrast == null) t.contrast = 1;
+        if (t.saturate == null) t.saturate = 1;
         t.historyStack = t.historyStack || [t.url];
         t.historyIndex = t.historyIndex != null ? t.historyIndex : 0;
       });
@@ -2617,7 +3272,10 @@ const BUILTIN_APPS = [
 
     requestAnimationFrame(() => {
       document.getElementById('boot').classList.add('done');
-      setTimeout(() => document.getElementById('boot').remove(), 500);
+      setTimeout(() => {
+        document.getElementById('boot').remove();
+        setTimeout(showFullscreenPrompt, 400);
+      }, 500);
     });
   }
 
