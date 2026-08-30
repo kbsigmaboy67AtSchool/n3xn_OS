@@ -1,0 +1,2628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="description" content="n3xn Virtual Operating System — ChromeOS-style browser OS with Seraph theme, IndexedDB persistence, cloaking, apps, and n3xn DevTools" />
+<title>n3xn</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23121820'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='28' font-family='system-ui' fill='%238ab4f8'%3En3%3C/text%3E%3C/svg%3E" />
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   n3xn Virtual OS — Seraph Gamehub CSS theme + ChromeOS layout
+   Single static HTML. Everything persists via IndexedDB.
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Inconsolata:wght@400;600&display=swap');
+
+:root {
+  --background-image: none;
+  --font-family: 'Ubuntu', system-ui, -apple-system, sans-serif;
+  --text-color: #fff;
+  --background-color: #0a0a0c;
+  --border-color1: #000000;
+  --border-color2: #3c4043;
+  --hover-color: #1a1818;
+  --text-glow: #000000;
+  --shelf-h: 48px;
+  --tab-h: 36px;
+  --accent: #8ab4f8;
+  --shelf-bg: rgba(18, 18, 22, 0.92);
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --danger: #f28b82;
+  --success: #81c995;
+  --muted: #9aa0a6;
+  --radius: 12px;
+  --shadow: 0 8px 32px rgba(0,0,0,.45);
+}
+
+:root.theme-azurite {
+  --text-color: #c8d9e9;
+  --border-color1: #2d6cc4;
+  --border-color2: #111633;
+  --background-color: #1a1f3a;
+  --hover-color: #373e7d;
+  --text-glow: #4e5bd0;
+  --accent: #6b9fff;
+  --shelf-bg: rgba(26, 31, 58, 0.94);
+  --surface: #22284a;
+  --surface2: #2a3158;
+}
+:root.theme-retro {
+  --font-family: 'Ubuntu', sans-serif;
+  --text-color: #ffffff;
+  --border-color1: #2fce56;
+  --border-color2: #375945;
+  --background-color: #0f2a1c;
+  --hover-color: #258a79;
+  --text-glow: #4ed089;
+  --accent: #2fce56;
+  --shelf-bg: rgba(15, 42, 28, 0.94);
+  --surface: #163528;
+  --surface2: #1c4232;
+}
+:root.theme-cosmic {
+  --font-family: 'Inconsolata', 'Ubuntu', monospace;
+  --text-color: #ffffff;
+  --border-color1: #1e1d1f;
+  --border-color2: #322c2c;
+  --background-color: #0c0c0e;
+  --hover-color: #181a1a;
+  --text-glow: #d6c9c9;
+  --accent: #c9b8ff;
+  --shelf-bg: rgba(12, 12, 14, 0.95);
+  --surface: #141416;
+  --surface2: #1c1c20;
+}
+:root.theme-molten {
+  --text-color: #f58484;
+  --border-color1: #e70e0e;
+  --border-color2: #742e2e;
+  --background-color: #1a0a0a;
+  --hover-color: #9b2121;
+  --text-glow: #dc1010;
+  --accent: #ff6b6b;
+  --shelf-bg: rgba(26, 10, 10, 0.94);
+  --surface: #2a1212;
+  --surface2: #3a1818;
+}
+:root.theme-amethyst {
+  --text-color: #c284f5;
+  --border-color1: #6c0ee7;
+  --border-color2: #4c1587;
+  --background-color: #140a1f;
+  --hover-color: #5f24ae;
+  --text-glow: #662589;
+  --accent: #b388ff;
+  --shelf-bg: rgba(20, 10, 31, 0.94);
+  --surface: #1e1230;
+  --surface2: #2a1840;
+}
+:root.theme-ethereal {
+  --text-color: #84f5ac;
+  --border-color1: #00fb82;
+  --border-color2: #bbe9c3;
+  --background-color: #0a1a14;
+  --hover-color: #219b48;
+  --text-glow: #6c957b;
+  --accent: #00fb82;
+  --shelf-bg: rgba(10, 26, 20, 0.94);
+  --surface: #122820;
+  --surface2: #183028;
+}
+:root.theme-subzero {
+  --text-color: #ffffff;
+  --border-color1: rgb(13, 12, 80);
+  --border-color2: rgb(0, 0, 153);
+  --background-color: #02041a;
+  --hover-color: rgb(10, 15, 112);
+  --text-glow: rgb(34, 13, 110);
+  --accent: #6b8cff;
+  --shelf-bg: rgba(2, 4, 26, 0.94);
+  --surface: #0a0e2e;
+  --surface2: #101640;
+}
+:root.theme-metro {
+  --text-color: rgb(228, 215, 171);
+  --border-color1: rgb(183, 133, 91);
+  --border-color2: rgb(169, 98, 39);
+  --background-color: #1a1008;
+  --hover-color: rgb(159, 85, 24);
+  --text-glow: rgb(110, 84, 13);
+  --accent: #e0a86a;
+  --shelf-bg: rgba(26, 16, 8, 0.94);
+  --surface: #2a1c10;
+  --surface2: #3a2818;
+}
+:root.theme-ghostly {
+  --text-color: rgb(237, 234, 223);
+  --border-color1: rgb(3, 3, 3);
+  --border-color2: rgb(49, 48, 48);
+  --background-color: #121212;
+  --hover-color: rgb(40, 37, 37);
+  --text-glow: rgb(167, 165, 165);
+  --accent: #c0c0c0;
+  --shelf-bg: rgba(18, 18, 18, 0.95);
+  --surface: #1c1c1c;
+  --surface2: #262626;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-family);
+  background: var(--background-color);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font-family: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+a { color: var(--accent); }
+
+/* ── Shell ── */
+#os {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  position: relative;
+  background: var(--background-color);
+}
+
+/* Tab strip (Chrome-like) */
+#tabstrip {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: var(--tab-h);
+  min-height: var(--tab-h);
+  padding: 4px 8px 0 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+#tabstrip::-webkit-scrollbar { display: none; }
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  min-width: 80px;
+  height: 28px;
+  padding: 0 8px 0 10px;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+  transition: background .12s, color .12s;
+}
+.tab:hover { background: var(--hover-color); color: var(--text-color); }
+.tab.active {
+  background: var(--surface2);
+  color: var(--text-color);
+  box-shadow: inset 0 1px 0 var(--border-color2);
+}
+.tab .fav {
+  width: 14px; height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: transparent;
+}
+.tab .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.tab .close {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.tab .close:hover { opacity: 1; background: rgba(255,255,255,.12); }
+#new-tab-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: grid; place-items: center;
+  color: var(--muted);
+  font-size: 18px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+#new-tab-btn:hover { background: var(--hover-color); color: var(--text-color); }
+
+/* Omnibox / toolbar */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border-color2);
+  flex-shrink: 0;
+}
+.tb-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--muted);
+  font-size: 16px;
+  transition: background .12s, color .12s;
+}
+.tb-btn:hover:not(:disabled) { background: var(--hover-color); color: var(--text-color); }
+.tb-btn:disabled { opacity: .35; cursor: default; }
+#omnibox-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  background: var(--background-color);
+  border: 1px solid var(--border-color2);
+  border-radius: 16px;
+  padding: 0 12px;
+  gap: 8px;
+  transition: border-color .15s, box-shadow .15s;
+}
+#omnibox-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+#omnibox {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 13px;
+  min-width: 0;
+}
+#omnibox::placeholder { color: var(--muted); }
+.omni-icon { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
+/* Content area — tabs keep iframes alive (display:none, not remove) */
+#content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  min-height: 0;
+}
+.frame-wrap {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background: #111;
+}
+.frame-wrap.active { display: block; }
+.frame-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+.frame-wrap .frame-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--background-color);
+  color: var(--muted);
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.frame-wrap.loading .frame-loading { opacity: 1; }
+
+/* New-tab / home page inside content */
+.home-page {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--background-color);
+  color: var(--text-color);
+  padding: 24px 32px 80px;
+}
+.home-page h1 {
+  font-size: 42px;
+  text-align: center;
+  margin: 24px 0 8px;
+  text-shadow: 0 0 20px var(--text-glow), 0 0 40px var(--text-glow);
+}
+.home-page .sub {
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+.search-big {
+  max-width: 560px;
+  margin: 0 auto 36px;
+  display: flex;
+  height: 44px;
+  background: var(--surface);
+  border: 2px solid var(--border-color2);
+  border-radius: 22px;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.search-big:focus-within { border-color: var(--accent); }
+.search-big input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 18px;
+  font-size: 15px;
+  color: var(--text-color);
+}
+.search-big button {
+  padding: 0 20px;
+  background: var(--hover-color);
+  color: var(--text-color);
+  font-weight: 500;
+  border-left: 1px solid var(--border-color2);
+}
+.search-big button:hover { background: color-mix(in srgb, var(--accent) 30%, var(--hover-color)); }
+
+.section-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin: 20px 0 12px;
+  font-weight: 600;
+}
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.app-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: background .12s, border-color .12s, transform .12s;
+  cursor: pointer;
+  user-select: none;
+}
+.app-tile:hover {
+  background: var(--hover-color);
+  border-color: var(--border-color2);
+  transform: translateY(-2px);
+}
+.app-tile .icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border-color2);
+  overflow: hidden;
+}
+.app-tile .icon img { width: 100%; height: 100%; object-fit: cover; }
+.app-tile .name {
+  font-size: 12px;
+  text-align: center;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ChromeOS-style shelf */
+#shelf {
+  height: var(--shelf-h);
+  min-height: var(--shelf-h);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  background: var(--shelf-bg);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-color2);
+  flex-shrink: 0;
+  z-index: 100;
+}
+.shelf-btn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  color: var(--text-color);
+  font-size: 18px;
+  transition: background .12s;
+  position: relative;
+}
+.shelf-btn:hover { background: var(--hover-color); }
+.shelf-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px; height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+#shelf-clock {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  line-height: 1.3;
+}
+#shelf-apps {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  max-width: 50vw;
+  scrollbar-width: none;
+}
+#shelf-apps::-webkit-scrollbar { display: none; }
+
+/* Context menus */
+.ctx-menu {
+  position: fixed;
+  z-index: 100000;
+  min-width: 180px;
+  background: var(--surface2);
+  border: 1px solid var(--border-color2);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: none;
+  font-size: 13px;
+}
+.ctx-menu.open { display: block; }
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text-color);
+  cursor: pointer;
+  user-select: none;
+}
+.ctx-item:hover { background: var(--hover-color); }
+.ctx-item.danger { color: var(--danger); }
+.ctx-sep { height: 1px; background: var(--border-color2); margin: 4px 6px; }
+
+/* Modals / panels */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 50000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-color2);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  width: min(520px, 100%);
+  max-height: min(80vh, 640px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal.wide { width: min(720px, 100%); }
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-color2);
+  font-weight: 600;
+  font-size: 15px;
+}
+.modal-body {
+  padding: 16px 18px;
+  overflow: auto;
+  flex: 1;
+}
+.modal-foot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-color2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border-color2);
+  background: var(--surface2);
+  color: var(--text-color);
+  transition: background .12s;
+}
+.btn:hover { background: var(--hover-color); }
+.btn.primary {
+  background: color-mix(in srgb, var(--accent) 25%, var(--surface2));
+  border-color: var(--accent);
+  color: var(--text-color);
+}
+.btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border-color2)); }
+.field {
+  margin-bottom: 14px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color2);
+  background: var(--background-color);
+  color: var(--text-color);
+  font-size: 13px;
+  outline: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+}
+.field textarea { min-height: 80px; resize: vertical; }
+.chk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+.chk input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+/* Launcher (app drawer) */
+#launcher {
+  position: fixed;
+  inset: 0;
+  z-index: 40000;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: calc(var(--shelf-h) + 12px);
+}
+#launcher.open { display: flex; }
+.launcher-panel {
+  width: min(720px, 94vw);
+  max-height: 70vh;
+  background: var(--shelf-bg);
+  border: 1px solid var(--border-color2);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  overflow: auto;
+}
+.launcher-search {
+  width: 100%;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color2);
+  background: var(--background-color);
+  padding: 0 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  outline: none;
+  color: var(--text-color);
+}
+.launcher-search:focus { border-color: var(--accent); }
+
+/* Settings */
+.settings-grid {
+  display: grid;
+  gap: 16px;
+}
+.theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.swatch {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* Toast */
+#toasts {
+  position: fixed;
+  bottom: calc(var(--shelf-h) + 16px);
+  right: 16px;
+  z-index: 90000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface2);
+  border: 1px solid var(--border-color2);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  animation: toastIn .25s ease;
+  max-width: 320px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Bookmarks bar (optional) */
+#bookmarks-bar {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color2);
+  overflow-x: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+#bookmarks-bar.visible { display: flex; }
+.bm-chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  color: var(--muted);
+  cursor: pointer;
+}
+.bm-chip:hover { background: var(--hover-color); color: var(--text-color); }
+
+/* Windowed apps (independent of browser tabs) */
+#app-windows {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20000;
+}
+.app-window {
+  position: absolute;
+  pointer-events: auto;
+  background: var(--surface);
+  border: 1px solid var(--border-color2);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 280px;
+  min-height: 180px;
+}
+.app-window .win-titlebar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border-color2);
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+.app-window .win-titlebar .win-icon { width: 16px; height: 16px; border-radius: 3px; }
+.app-window .win-titlebar .win-name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-window .win-ctrls { display: flex; gap: 4px; }
+.app-window .win-ctrls button {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.app-window .win-ctrls button:hover { background: var(--hover-color); color: var(--text-color); }
+.app-window .win-ctrls .win-close:hover { background: var(--danger); color: #fff; }
+.app-window .win-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #111;
+}
+.app-window .win-body iframe {
+  width: 100%; height: 100%; border: 0;
+}
+.app-window.maximized {
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0;
+}
+.app-window.minimized { display: none; }
+.resize-handle {
+  position: absolute;
+  right: 0; bottom: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--border-color2) 50%);
+}
+
+/* Boot splash */
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: #0a0a0c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transition: opacity .4s;
+}
+#boot.done { opacity: 0; pointer-events: none; }
+#boot .logo {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #8ab4f8;
+  text-shadow: 0 0 30px rgba(138,180,248,.4);
+}
+#boot .spin {
+  width: 28px; height: 28px;
+  border: 3px solid #3c4043;
+  border-top-color: #8ab4f8;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Utility */
+.hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+</head>
+<body>
+<div id="boot">
+  <div class="logo">n3xn</div>
+  <div class="spin"></div>
+  <div style="color:#9aa0a6;font-size:13px">Virtual Operating System</div>
+</div>
+
+<div id="os">
+  <div id="tabstrip">
+    <button id="new-tab-btn" title="New tab (Ctrl+T)">+</button>
+  </div>
+  <div id="toolbar">
+    <button class="tb-btn" id="btn-back" title="Back">←</button>
+    <button class="tb-btn" id="btn-fwd" title="Forward">→</button>
+    <button class="tb-btn" id="btn-reload" title="Reload">↻</button>
+    <div id="omnibox-wrap">
+      <span class="omni-icon" id="omni-lock">🔒</span>
+      <input id="omnibox" type="text" spellcheck="false" autocomplete="off" placeholder="Search or enter URL" />
+    </div>
+    <button class="tb-btn" id="btn-star" title="Bookmark">☆</button>
+    <button class="tb-btn" id="btn-more" title="Menu">⋮</button>
+  </div>
+  <div id="bookmarks-bar"></div>
+  <div id="content"></div>
+  <div id="shelf">
+    <button class="shelf-btn" id="btn-launcher" title="Launcher">▦</button>
+    <div id="shelf-apps"></div>
+    <div id="shelf-clock"></div>
+    <button class="shelf-btn" id="btn-settings" title="Settings">⚙</button>
+  </div>
+</div>
+
+<div id="app-windows"></div>
+<div id="launcher"><div class="launcher-panel">
+  <input class="launcher-search" id="launcher-search" placeholder="Search apps…" />
+  <div class="apps-grid" id="launcher-grid"></div>
+</div></div>
+
+<div class="modal-backdrop" id="modal-settings">
+  <div class="modal wide">
+    <div class="modal-head"><span>Settings</span><button class="tb-btn" data-close>✕</button></div>
+    <div class="modal-body settings-grid">
+      <div class="field">
+        <label>Theme (Seraph)</label>
+        <div class="theme-swatches" id="theme-swatches"></div>
+      </div>
+      <div class="field">
+        <label>Search engine</label>
+        <select id="set-search">
+          <option value="https://duckduckgo.com/?q=%s">DuckDuckGo</option>
+          <option value="https://www.google.com/search?q=%s">Google</option>
+          <option value="https://www.bing.com/search?q=%s">Bing</option>
+          <option value="https://search.brave.com/search?q=%s">Brave</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Default homepage / new-tab URL (leave blank for n3xn home)</label>
+        <input id="set-homepage" type="text" placeholder="about:home" />
+      </div>
+      <label class="chk"><input type="checkbox" id="set-bmbar" /> Show bookmarks bar</label>
+      <label class="chk"><input type="checkbox" id="set-cloak-default" /> Open new tabs cloaked (about:blank identity)</label>
+      <div class="field">
+        <label>Default iframe allow attributes</label>
+        <input id="set-allow" type="text" placeholder="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
+      </div>
+      <label class="chk"><input type="checkbox" id="set-allowfs" checked /> allowfullscreen on iframes</label>
+      <div class="field">
+        <label>Data</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btn-export">Export backup</button>
+          <button class="btn" id="btn-import">Import backup</button>
+          <button class="btn danger" id="btn-clear-data">Clear all data</button>
+        </div>
+        <input type="file" id="import-file" accept="application/json" class="hidden" />
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn primary" data-close>Done</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-tab-edit">
+  <div class="modal">
+    <div class="modal-head"><span>Edit tab</span><button class="tb-btn" data-close>✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Custom title</label><input id="edit-title" type="text" placeholder="Leave blank for page title" /></div>
+      <div class="field"><label>Custom favicon URL</label><input id="edit-favicon" type="text" placeholder="https://… or data:…" /></div>
+      <div class="field"><label>URL</label><input id="edit-url" type="text" /></div>
+      <div class="field"><label>iframe allow=</label><input id="edit-allow" type="text" /></div>
+      <label class="chk"><input type="checkbox" id="edit-allowfs" /> allowfullscreen</label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="edit-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-install-app">
+  <div class="modal">
+    <div class="modal-head"><span>Install as app</span><button class="tb-btn" data-close>✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>App name</label><input id="inst-name" type="text" /></div>
+      <div class="field"><label>URL</label><input id="inst-url" type="text" /></div>
+      <div class="field"><label>Icon URL (optional)</label><input id="inst-icon" type="text" placeholder="emoji or image URL" /></div>
+      <label class="chk"><input type="checkbox" id="inst-cloak" checked /> Hide URL / cloak identity</label>
+      <label class="chk"><input type="checkbox" id="inst-shelf" checked /> Pin to shelf</label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="inst-save">Install</button>
+    </div>
+  </div>
+</div>
+
+<div class="ctx-menu" id="ctx-menu"></div>
+<div id="toasts"></div>
+
+<div class="modal-backdrop" id="modal-generic-edit">
+  <div class="modal">
+    <div class="modal-head"><span id="gen-edit-title">Edit</span><button class="tb-btn" data-close>✕</button></div>
+    <div class="modal-body" id="gen-edit-body"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="gen-edit-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   n3xn Virtual OS — core
+   ═══════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const DB_NAME = 'n3xn_os_db';
+  const DB_VER = 1;
+  const STORES = ['meta', 'tabs', 'bookmarks', 'history', 'apps', 'settings'];
+
+  const DEFAULT_ALLOW = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+  const DEFAULT_FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%233c4043'/%3E%3C/svg%3E";
+
+  const THEMES = [
+    { id: '', name: 'Default', color: '#0a0a0c' },
+    { id: 'theme-azurite', name: 'Azurite', color: '#2d6cc4' },
+    { id: 'theme-retro', name: 'Retro', color: '#2fce56' },
+    { id: 'theme-cosmic', name: 'Cosmic', color: '#322c2c' },
+    { id: 'theme-molten', name: 'Molten', color: '#e70e0e' },
+    { id: 'theme-amethyst', name: 'Amethyst', color: '#6c0ee7' },
+    { id: 'theme-ethereal', name: 'Ethereal', color: '#00fb82' },
+    { id: 'theme-subzero', name: 'Subzero', color: '#000099' },
+    { id: 'theme-metro', name: 'Metro', color: '#a96227' },
+    { id: 'theme-ghostly', name: 'Ghostly', color: '#313030' },
+  ];
+
+  /* Built-in preinstalled apps (also tries /preinstalled.json) */
+  const BUILTIN_APPS = [
+    { id: 'app-settings', name: 'Settings', url: 'about:settings', icon: '⚙', system: true, shelf: true },
+    { id: 'app-browser', name: 'Browser', url: 'about:home', icon: '🌐', system: true, shelf: true },
+    { id: 'app-files', name: 'Files', url: 'about:files', icon: '📁', system: true, shelf: false },
+    { id: 'app-terminal', name: 'Terminal', url: 'about:terminal', icon: '⬛', system: true, shelf: false },
+    { id: 'app-store', name: 'App Store', url: 'about:store', icon: '🛒', system: true, shelf: false },
+    { id: 'app-ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔎', shelf: true },
+    { id: 'app-yt', name: 'YouTube', url: 'https://www.youtube.com', icon: '▶', shelf: false },
+    { id: 'app-gh', name: 'GitHub', url: 'https://github.com', icon: '🐙', shelf: false },
+    { id: 'app-wiki', name: 'Wikipedia', url: 'https://wikipedia.org', icon: '📖', shelf: false },
+    { id: 'app-discord', name: 'Discord', url: 'https://discord.com/app', icon: '💬', shelf: false },
+    { id: 'app-spotify', name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵', shelf: false },
+    { id: 'app-gmail', name: 'Gmail', url: 'https://mail.google.com', icon: '✉', shelf: false },
+    { id: 'app-maps', name: 'Maps', url: 'https://maps.google.com', icon: '🗺', shelf: false },
+    { id: 'app-calc', name: 'Calculator', url: 'about:calc', icon: '🔢', system: true, shelf: false },
+  ];
+
+  const state = {
+    tabs: [],
+    activeTabId: null,
+    bookmarks: [],
+    history: [],
+    apps: [],
+    windows: [],
+    settings: {
+      theme: '',
+      searchEngine: 'https://duckduckgo.com/?q=%s',
+      homepage: '',
+      showBookmarksBar: false,
+      cloakNewTabs: false,
+      defaultAllow: DEFAULT_ALLOW,
+      allowFullscreen: true,
+    },
+    editingTabId: null,
+  };
+
+  let db = null;
+  let tabIdSeq = 1;
+  let winIdSeq = 1;
+
+  /* ── IndexedDB ── */
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        STORES.forEach((s) => {
+          if (!d.objectStoreNames.contains(s)) d.createObjectStore(s);
+        });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function idbGet(store, key) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const r = tx.objectStore(store).get(key);
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    });
+  }
+
+  function idbSet(store, key, value) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      tx.objectStore(store).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  function idbClear(store) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      tx.objectStore(store).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function saveAll() {
+    if (!db) return;
+    try {
+      const tabsPersist = state.tabs.map((t) => ({
+        id: t.id,
+        url: t.url,
+        title: t.title,
+        customTitle: t.customTitle,
+        favicon: t.favicon,
+        customFavicon: t.customFavicon,
+        cloaked: t.cloaked,
+        allow: t.allow,
+        allowFullscreen: t.allowFullscreen,
+        isHome: t.isHome,
+      }));
+      await Promise.all([
+        idbSet('tabs', 'list', tabsPersist),
+        idbSet('tabs', 'active', state.activeTabId),
+        idbSet('bookmarks', 'list', state.bookmarks),
+        idbSet('history', 'list', state.history.slice(0, 500)),
+        idbSet('apps', 'list', state.apps),
+        idbSet('settings', 'main', state.settings),
+        idbSet('meta', 'seq', { tabIdSeq, winIdSeq }),
+      ]);
+    } catch (e) {
+      console.warn('n3xn save', e);
+    }
+  }
+
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveAll, 250);
+  }
+
+  async function loadAll() {
+    const [tabsList, active, bms, hist, apps, settings, seq] = await Promise.all([
+      idbGet('tabs', 'list'),
+      idbGet('tabs', 'active'),
+      idbGet('bookmarks', 'list'),
+      idbGet('history', 'list'),
+      idbGet('apps', 'list'),
+      idbGet('settings', 'main'),
+      idbGet('meta', 'seq'),
+    ]);
+    if (settings) Object.assign(state.settings, settings);
+    if (Array.isArray(bms)) state.bookmarks = bms;
+    if (Array.isArray(hist)) state.history = hist;
+    if (seq) {
+      tabIdSeq = seq.tabIdSeq || 1;
+      winIdSeq = seq.winIdSeq || 1;
+    }
+    if (Array.isArray(apps) && apps.length) {
+      state.apps = apps;
+    } else {
+      state.apps = BUILTIN_APPS.map((a) => ({ ...a }));
+    }
+    if (Array.isArray(tabsList) && tabsList.length) {
+      state.tabs = tabsList;
+      state.activeTabId = active || tabsList[0].id;
+    }
+  }
+
+  /* Try external preinstalled.json */
+  async function loadPreinstalled() {
+    try {
+      const r = await fetch('/preinstalled.json', { cache: 'no-store' });
+      if (!r.ok) return;
+      const data = await r.json();
+      const list = Array.isArray(data) ? data : (data.apps || data.preinstalled || []);
+      if (!list.length) return;
+      const existing = new Set(state.apps.map((a) => a.id || a.url));
+      for (const item of list) {
+        const app = {
+          id: item.id || ('app-' + Math.random().toString(36).slice(2, 9)),
+          name: item.name || item.title || 'App',
+          url: item.url || item.href || 'about:blank',
+          icon: item.icon || item.favicon || '📦',
+          shelf: !!item.shelf,
+          system: !!item.system,
+          cloak: !!item.cloak,
+        };
+        if (!existing.has(app.id) && !existing.has(app.url)) {
+          state.apps.push(app);
+          existing.add(app.id);
+        }
+      }
+      scheduleSave();
+    } catch {}
+  }
+
+  /* ── Utils ── */
+  function uid(prefix = 't') {
+    return prefix + (Date.now().toString(36) + Math.random().toString(36).slice(2, 7));
+  }
+
+  function toast(msg, ms = 2800) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), ms);
+  }
+
+  function isAbout(url) {
+    return typeof url === 'string' && url.startsWith('about:');
+  }
+
+  function normalizeUrl(input) {
+    const s = (input || '').trim();
+    if (!s) return 'about:home';
+    if (isAbout(s)) return s;
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^\/\//.test(s)) return 'https:' + s;
+    if (/^[a-z0-9.-]+\.[a-z]{2,}([/:].*)?$/i.test(s) || /^localhost(:\d+)?/i.test(s)) {
+      return 'https://' + s;
+    }
+    const eng = state.settings.searchEngine || 'https://duckduckgo.com/?q=%s';
+    return eng.replace('%s', encodeURIComponent(s));
+  }
+
+  function faviconFor(url) {
+    if (!url || isAbout(url)) return DEFAULT_FAVICON;
+    try {
+      const u = new URL(url);
+      return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=32`;
+    } catch {
+      return DEFAULT_FAVICON;
+    }
+  }
+
+  function displayTitle(tab) {
+    if (tab.customTitle) return tab.customTitle;
+    if (tab.title) return tab.title;
+    if (tab.isHome || tab.url === 'about:home') return 'New Tab';
+    try { return new URL(tab.url).hostname; } catch { return tab.url || 'Tab'; }
+  }
+
+  function displayFavicon(tab) {
+    return tab.customFavicon || tab.favicon || faviconFor(tab.url);
+  }
+
+  /* ── Tab model ── */
+  function createTab(opts = {}) {
+    const id = opts.id || uid('t');
+    const url = opts.url != null ? opts.url : (state.settings.homepage || 'about:home');
+    const tab = {
+      id,
+      url: normalizeUrl(url),
+      title: opts.title || '',
+      customTitle: opts.customTitle || null,
+      favicon: opts.favicon || null,
+      customFavicon: opts.customFavicon || null,
+      cloaked: opts.cloaked != null ? opts.cloaked : !!state.settings.cloakNewTabs,
+      allow: opts.allow != null ? opts.allow : state.settings.defaultAllow,
+      allowFullscreen: opts.allowFullscreen != null ? opts.allowFullscreen : !!state.settings.allowFullscreen,
+      isHome: false,
+      historyStack: [],
+      historyIndex: -1,
+      _iframe: null,
+      _wrap: null,
+    };
+    if (tab.url === 'about:home' || !tab.url || isAbout(tab.url) && tab.url === 'about:home') {
+      tab.isHome = true;
+      tab.url = 'about:home';
+    }
+    state.tabs.push(tab);
+    if (tabIdSeq <= state.tabs.length) tabIdSeq = state.tabs.length + 1;
+    return tab;
+  }
+
+  function getTab(id) {
+    return state.tabs.find((t) => t.id === id);
+  }
+
+  function getActiveTab() {
+    return getTab(state.activeTabId);
+  }
+
+  /* ── Render tabs ── */
+  function renderTabstrip() {
+    const strip = document.getElementById('tabstrip');
+    const newBtn = document.getElementById('new-tab-btn');
+    strip.querySelectorAll('.tab').forEach((n) => n.remove());
+    state.tabs.forEach((tab) => {
+      const el = document.createElement('div');
+      el.className = 'tab' + (tab.id === state.activeTabId ? ' active' : '');
+      el.dataset.id = tab.id;
+      el.title = tab.cloaked ? 'about:blank' : tab.url;
+      const fav = document.createElement('img');
+      fav.className = 'fav';
+      fav.src = displayFavicon(tab);
+      fav.alt = '';
+      fav.onerror = () => { fav.src = DEFAULT_FAVICON; };
+      const title = document.createElement('span');
+      title.className = 'title';
+      title.textContent = displayTitle(tab);
+      const close = document.createElement('button');
+      close.className = 'close';
+      close.textContent = '×';
+      close.title = 'Close';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTab(tab.id);
+      });
+      el.append(fav, title, close);
+      el.addEventListener('click', () => activateTab(tab.id));
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        openTabContext(e, tab);
+      });
+      strip.insertBefore(el, newBtn);
+    });
+  }
+
+  function ensureFrame(tab) {
+    if (tab._wrap) return tab._wrap;
+    const wrap = document.createElement('div');
+    wrap.className = 'frame-wrap';
+    wrap.dataset.id = tab.id;
+    const loading = document.createElement('div');
+    loading.className = 'frame-loading';
+    loading.textContent = 'Loading…';
+    wrap.appendChild(loading);
+
+    if (tab.isHome || tab.url === 'about:home') {
+      wrap.appendChild(buildHomePage(tab));
+    } else if (isAbout(tab.url)) {
+      wrap.appendChild(buildAboutPage(tab));
+    } else {
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('allow', tab.allow || DEFAULT_ALLOW);
+      if (tab.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+      iframe.loading = 'eager';
+      // Keep alive — never unload on switch
+      iframe.src = tab.url;
+      wrap.classList.add('loading');
+      iframe.addEventListener('load', () => {
+        wrap.classList.remove('loading');
+        tryUpdateTabMeta(tab, iframe);
+      });
+      iframe.addEventListener('error', () => wrap.classList.remove('loading'));
+      tab._iframe = iframe;
+      wrap.appendChild(iframe);
+    }
+    tab._wrap = wrap;
+    document.getElementById('content').appendChild(wrap);
+    return wrap;
+  }
+
+  function tryUpdateTabMeta(tab, iframe) {
+    // Cross-origin: limited. Poll title/favicon via document when same-origin.
+    try {
+      const doc = iframe.contentDocument;
+      if (doc) {
+        const t = doc.title;
+        if (t && !tab.customTitle) {
+          tab.title = t;
+          renderTabstrip();
+          updateOmnibox();
+        }
+        const link = doc.querySelector('link[rel*="icon"]');
+        if (link && link.href && !tab.customFavicon) {
+          tab.favicon = link.href;
+          renderTabstrip();
+        }
+      }
+    } catch {
+      // cross-origin — keep URL-based favicon/title
+      if (!tab.title) {
+        try { tab.title = new URL(tab.url).hostname; } catch {}
+        renderTabstrip();
+      }
+    }
+    addHistory(tab.url, displayTitle(tab));
+    scheduleSave();
+  }
+
+  // Continuously refresh tab chrome for active iframe when possible
+  setInterval(() => {
+    const tab = getActiveTab();
+    if (!tab || !tab._iframe) return;
+    tryUpdateTabMeta(tab, tab._iframe);
+  }, 2000);
+
+  function activateTab(id) {
+    const tab = getTab(id);
+    if (!tab) return;
+    state.activeTabId = id;
+    // Hide all frames without unloading
+    document.querySelectorAll('.frame-wrap').forEach((w) => w.classList.remove('active'));
+    const wrap = ensureFrame(tab);
+    wrap.classList.add('active');
+    renderTabstrip();
+    updateOmnibox();
+    updateNavButtons();
+    scheduleSave();
+  }
+
+  function closeTab(id) {
+    const idx = state.tabs.findIndex((t) => t.id === id);
+    if (idx < 0) return;
+    const tab = state.tabs[idx];
+    if (tab._wrap) {
+      tab._wrap.remove();
+      tab._wrap = null;
+      tab._iframe = null;
+    }
+    state.tabs.splice(idx, 1);
+    if (!state.tabs.length) {
+      const t = createTab({ url: 'about:home' });
+      activateTab(t.id);
+    } else if (state.activeTabId === id) {
+      const next = state.tabs[Math.min(idx, state.tabs.length - 1)];
+      activateTab(next.id);
+    } else {
+      renderTabstrip();
+      scheduleSave();
+    }
+  }
+
+  function navigateTab(tab, url, { push = true } = {}) {
+    url = normalizeUrl(url);
+    tab.url = url;
+    tab.isHome = url === 'about:home';
+    if (!tab.customTitle) tab.title = '';
+    if (!tab.customFavicon) tab.favicon = faviconFor(url);
+
+    // Rebuild frame content (keep wrapper in DOM tree order)
+    if (tab._wrap) {
+      tab._wrap.remove();
+      tab._wrap = null;
+      tab._iframe = null;
+    }
+    if (push) {
+      tab.historyStack = tab.historyStack.slice(0, tab.historyIndex + 1);
+      tab.historyStack.push(url);
+      tab.historyIndex = tab.historyStack.length - 1;
+    }
+    ensureFrame(tab);
+    if (tab.id === state.activeTabId) {
+      tab._wrap.classList.add('active');
+      updateOmnibox();
+      updateNavButtons();
+    }
+    renderTabstrip();
+    addHistory(url, displayTitle(tab));
+    scheduleSave();
+  }
+
+  function updateOmnibox() {
+    const tab = getActiveTab();
+    const input = document.getElementById('omnibox');
+    if (!tab) {
+      input.value = '';
+      return;
+    }
+    if (tab.cloaked) {
+      input.value = 'about:blank';
+      document.getElementById('omni-lock').textContent = '👁';
+    } else if (tab.isHome || tab.url === 'about:home') {
+      input.value = '';
+      document.getElementById('omni-lock').textContent = '🏠';
+    } else {
+      input.value = tab.url;
+      document.getElementById('omni-lock').textContent = tab.url.startsWith('https') ? '🔒' : '🌐';
+    }
+  }
+
+  function updateNavButtons() {
+    const tab = getActiveTab();
+    document.getElementById('btn-back').disabled = !tab || tab.historyIndex <= 0;
+    document.getElementById('btn-fwd').disabled = !tab || tab.historyIndex >= (tab.historyStack?.length || 0) - 1;
+  }
+
+  /* ── Home / about pages ── */
+  function buildHomePage(tab) {
+    const page = document.createElement('div');
+    page.className = 'home-page';
+    page.innerHTML = `
+      <h1>n3xn</h1>
+      <p class="sub">Virtual Operating System · Seraph theme · IndexedDB</p>
+      <div class="search-big">
+        <input type="text" placeholder="Search the web or type a URL" data-home-search />
+        <button type="button" data-home-go>Go</button>
+      </div>
+      <div class="section-title">Pinned apps</div>
+      <div class="apps-grid" data-home-apps></div>
+      <div class="section-title">Recent</div>
+      <div class="apps-grid" data-home-recent></div>
+    `;
+    const go = () => {
+      const q = page.querySelector('[data-home-search]').value;
+      if (q.trim()) navigateTab(tab, q);
+    };
+    page.querySelector('[data-home-go]').addEventListener('click', go);
+    page.querySelector('[data-home-search]').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') go();
+    });
+    const appsEl = page.querySelector('[data-home-apps]');
+    state.apps.filter((a) => a.shelf || a.system).slice(0, 12).forEach((app) => {
+      appsEl.appendChild(makeAppTile(app, () => openApp(app)));
+    });
+    const recentEl = page.querySelector('[data-home-recent]');
+    state.history.slice(0, 8).forEach((h) => {
+      const tile = document.createElement('div');
+      tile.className = 'app-tile';
+      tile.innerHTML = `<div class="icon"><img src="${faviconFor(h.url)}" onerror="this.remove()" /></div><div class="name">${escapeHtml(h.title || h.url)}</div>`;
+      tile.addEventListener('click', () => navigateTab(tab, h.url));
+      tile.addEventListener('contextmenu', (e) => openHistoryContext(e, h));
+      recentEl.appendChild(tile);
+    });
+    page.addEventListener('contextmenu', (e) => {
+      if (e.target.closest('.app-tile')) return;
+      openHomeChromeContext(e);
+    });
+    return page;
+  }
+
+  function buildAboutPage(tab) {
+    const page = document.createElement('div');
+    page.className = 'home-page';
+    const kind = tab.url.replace('about:', '');
+    if (kind === 'settings') {
+      page.innerHTML = `<h1>Settings</h1><p class="sub">Use the shelf ⚙ button or menu for full settings.</p>`;
+      setTimeout(() => openSettings(), 100);
+    } else if (kind === 'calc') {
+      page.innerHTML = `
+        <h1>Calculator</h1>
+        <div style="max-width:280px;margin:24px auto">
+          <input id="calc-out" readonly style="width:100%;padding:12px;font-size:22px;text-align:right;border-radius:10px;border:1px solid var(--border-color2);background:var(--surface);margin-bottom:10px" value="0" />
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="calc-keys"></div>
+        </div>`;
+      const keys = ['C','←','%','/','7','8','9','*','4','5','6','-','1','2','3','+','0','.','=','±'];
+      const out = page.querySelector('#calc-out');
+      let expr = '';
+      keys.forEach((k) => {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = k;
+        b.style.padding = '14px';
+        b.addEventListener('click', () => {
+          if (k === 'C') { expr = ''; out.value = '0'; return; }
+          if (k === '←') { expr = expr.slice(0, -1); out.value = expr || '0'; return; }
+          if (k === '=') {
+            try { expr = String(Function('"use strict";return(' + expr + ')')()); out.value = expr; }
+            catch { out.value = 'Error'; expr = ''; }
+            return;
+          }
+          if (k === '±') { expr = expr.startsWith('-') ? expr.slice(1) : '-' + expr; out.value = expr; return; }
+          expr += k === '×' ? '*' : k;
+          out.value = expr;
+        });
+        page.querySelector('#calc-keys').appendChild(b);
+      });
+    } else if (kind === 'terminal') {
+      page.innerHTML = `<h1>Terminal</h1><pre id="term-out" style="background:var(--surface);border:1px solid var(--border-color2);border-radius:10px;padding:14px;min-height:200px;max-width:700px;margin:16px auto;font-family:Inconsolata,monospace;font-size:13px"></pre>
+        <div style="max-width:700px;margin:0 auto;display:flex;gap:8px"><span style="color:var(--accent)">$</span><input id="term-in" style="flex:1;background:transparent;border:none;outline:none;color:var(--text-color);font-family:Inconsolata,monospace" /></div>`;
+      const out = page.querySelector('#term-out');
+      const inp = page.querySelector('#term-in');
+      const lines = ['n3xn shell v1 — type help'];
+      const render = () => { out.textContent = lines.join('\n'); out.scrollTop = out.scrollHeight; };
+      render();
+      inp.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const cmd = inp.value.trim();
+        lines.push('$ ' + cmd);
+        inp.value = '';
+        if (cmd === 'help') lines.push('commands: help, clear, date, apps, tabs, theme, version');
+        else if (cmd === 'clear') lines.length = 0;
+        else if (cmd === 'date') lines.push(new Date().toString());
+        else if (cmd === 'apps') lines.push(state.apps.map((a) => a.name).join(', '));
+        else if (cmd === 'tabs') lines.push(state.tabs.map((t) => displayTitle(t)).join(' | '));
+        else if (cmd.startsWith('theme ')) {
+          applyTheme(cmd.slice(6).trim());
+          lines.push('theme set');
+        } else if (cmd === 'version') lines.push('n3xn Virtual OS 1.0.0');
+        else if (cmd) lines.push('command not found: ' + cmd);
+        render();
+      });
+      setTimeout(() => inp.focus(), 50);
+    } else if (kind === 'files') {
+      page.innerHTML = `<h1>Files</h1><p class="sub">Virtual filesystem backed by IndexedDB (export/import from Settings).</p>
+        <div style="max-width:600px;margin:20px auto;background:var(--surface);border:1px solid var(--border-color2);border-radius:12px;padding:16px">
+          <p>Bookmarks: ${state.bookmarks.length}</p>
+          <p>History entries: ${state.history.length}</p>
+          <p>Installed apps: ${state.apps.length}</p>
+          <p>Open tabs: ${state.tabs.length}</p>
+        </div>`;
+    } else if (kind === 'store') {
+      page.innerHTML = `<h1>App Store</h1><p class="sub">Install any URL as an independent app window.</p>
+        <div class="apps-grid" style="max-width:800px;margin:20px auto" data-store></div>`;
+      const grid = page.querySelector('[data-store]');
+      state.apps.forEach((app) => grid.appendChild(makeAppTile(app, () => openApp(app))));
+      const add = document.createElement('div');
+      add.className = 'app-tile';
+      add.innerHTML = `<div class="icon">＋</div><div class="name">Install URL…</div>`;
+      add.addEventListener('click', () => openInstallApp());
+      grid.appendChild(add);
+    } else {
+      page.innerHTML = `<h1>${escapeHtml(tab.url)}</h1><p class="sub">About page</p>`;
+    }
+    return page;
+  }
+
+  function makeAppTile(app, onClick) {
+    const tile = document.createElement('div');
+    tile.className = 'app-tile';
+    const icon = document.createElement('div');
+    icon.className = 'icon';
+    if (app.icon && (String(app.icon).startsWith('http') || String(app.icon).startsWith('data:'))) {
+      const img = document.createElement('img');
+      img.src = app.icon;
+      img.onerror = () => { icon.textContent = '📦'; };
+      icon.appendChild(img);
+    } else {
+      icon.textContent = app.icon || '📦';
+    }
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = app.name;
+    tile.append(icon, name);
+    tile.addEventListener('click', onClick);
+    tile.addEventListener('contextmenu', (e) => openAppContext(e, app));
+    return tile;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  /* ── History / bookmarks ── */
+  function addHistory(url, title) {
+    if (!url || isAbout(url)) return;
+    state.history = state.history.filter((h) => h.url !== url);
+    state.history.unshift({ url, title: title || url, at: Date.now() });
+    if (state.history.length > 500) state.history.length = 500;
+    scheduleSave();
+  }
+
+  function toggleBookmark() {
+    const tab = getActiveTab();
+    if (!tab || isAbout(tab.url)) return;
+    const i = state.bookmarks.findIndex((b) => b.url === tab.url);
+    if (i >= 0) {
+      state.bookmarks.splice(i, 1);
+      toast('Bookmark removed');
+    } else {
+      state.bookmarks.unshift({
+        url: tab.url,
+        title: displayTitle(tab),
+        favicon: displayFavicon(tab),
+        at: Date.now(),
+      });
+      toast('Bookmarked');
+    }
+    renderBookmarksBar();
+    scheduleSave();
+  }
+
+  function renderBookmarksBar() {
+    const bar = document.getElementById('bookmarks-bar');
+    bar.classList.toggle('visible', !!state.settings.showBookmarksBar);
+    bar.innerHTML = '';
+    state.bookmarks.forEach((b) => {
+      const chip = document.createElement('div');
+      chip.className = 'bm-chip';
+      chip.textContent = b.title || b.url;
+      chip.title = b.url;
+      chip.addEventListener('click', () => {
+        const tab = getActiveTab();
+        if (tab) navigateTab(tab, b.url);
+      });
+      chip.addEventListener('contextmenu', (e) => openBookmarkContext(e, b));
+      bar.appendChild(chip);
+    });
+    bar.oncontextmenu = (e) => {
+      if (e.target === bar) {
+        showContextMenu(e, [
+          { label: 'Add bookmark from current tab', fn: toggleBookmark },
+          { label: 'Hide bookmarks bar', fn: () => {
+            state.settings.showBookmarksBar = false;
+            renderBookmarksBar(); scheduleSave();
+          }},
+        ]);
+      }
+    };
+  }
+
+  /* ── Apps / windows ── */
+  function openApp(app) {
+    if (app.url === 'about:settings' || app.id === 'app-settings') {
+      openSettings();
+      return;
+    }
+    if (app.url === 'about:home' || app.id === 'app-browser') {
+      const t = createTab({ url: 'about:home' });
+      activateTab(t.id);
+      closeLauncher();
+      return;
+    }
+    // Independent window (URL hidden from browser chrome)
+    openAppWindow(app);
+    closeLauncher();
+  }
+
+  function openAppWindow(app) {
+    const id = uid('w');
+    const win = {
+      id,
+      appId: app.id,
+      name: app.name,
+      url: app.url,
+      icon: app.icon,
+      cloak: !!app.cloak,
+      x: 80 + (state.windows.length % 6) * 28,
+      y: 60 + (state.windows.length % 6) * 28,
+      w: 900,
+      h: 600,
+      maximized: false,
+      minimized: false,
+    };
+    state.windows.push(win);
+    renderWindow(win);
+  }
+
+  function renderWindow(win) {
+    const root = document.getElementById('app-windows');
+    let el = root.querySelector(`[data-wid="${win.id}"]`);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'app-window';
+      el.dataset.wid = win.id;
+      el.innerHTML = `
+        <div class="win-titlebar">
+          <span class="win-icon"></span>
+          <span class="win-name"></span>
+          <div class="win-ctrls">
+            <button class="win-min" title="Minimize">—</button>
+            <button class="win-max" title="Maximize">□</button>
+            <button class="win-close" title="Close">✕</button>
+          </div>
+        </div>
+        <div class="win-body"></div>
+        <div class="resize-handle"></div>`;
+      root.appendChild(el);
+
+      const bar = el.querySelector('.win-titlebar');
+      let drag = null;
+      bar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button') || win.maximized) return;
+        drag = { ox: e.clientX - win.x, oy: e.clientY - win.y };
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!drag) return;
+        win.x = Math.max(0, e.clientX - drag.ox);
+        win.y = Math.max(0, e.clientY - drag.oy);
+        layoutWindow(win, el);
+      });
+      window.addEventListener('mouseup', () => { drag = null; });
+
+      el.querySelector('.win-close').addEventListener('click', () => {
+        el.remove();
+        state.windows = state.windows.filter((w) => w.id !== win.id);
+      });
+      el.querySelector('.win-min').addEventListener('click', () => {
+        win.minimized = true;
+        el.classList.add('minimized');
+      });
+      el.querySelector('.win-max').addEventListener('click', () => {
+        win.maximized = !win.maximized;
+        el.classList.toggle('maximized', win.maximized);
+        layoutWindow(win, el);
+      });
+
+      const handle = el.querySelector('.resize-handle');
+      let resizing = null;
+      handle.addEventListener('mousedown', (e) => {
+        resizing = { ox: e.clientX, oy: e.clientY, ow: win.w, oh: win.h };
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!resizing) return;
+        win.w = Math.max(280, resizing.ow + (e.clientX - resizing.ox));
+        win.h = Math.max(180, resizing.oh + (e.clientY - resizing.oy));
+        layoutWindow(win, el);
+      });
+      window.addEventListener('mouseup', () => { resizing = null; });
+
+      // Body content
+      const body = el.querySelector('.win-body');
+      if (isAbout(win.url)) {
+        const fakeTab = { url: win.url, id: win.id };
+        body.appendChild(buildAboutPage(fakeTab));
+      } else {
+        const iframe = document.createElement('iframe');
+        iframe.src = win.url;
+        iframe.setAttribute('allow', state.settings.defaultAllow);
+        if (state.settings.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
+        body.appendChild(iframe);
+      }
+    }
+    el.querySelector('.win-name').textContent = win.cloak ? win.name : (win.name + ' — ' + win.url);
+    const iconEl = el.querySelector('.win-icon');
+    if (win.icon && (String(win.icon).startsWith('http') || String(win.icon).startsWith('data:'))) {
+      iconEl.innerHTML = `<img src="${win.icon}" style="width:16px;height:16px;border-radius:3px" />`;
+    } else {
+      iconEl.textContent = win.icon || '📦';
+    }
+    layoutWindow(win, el);
+  }
+
+  function layoutWindow(win, el) {
+    if (win.maximized) return;
+    el.style.left = win.x + 'px';
+    el.style.top = win.y + 'px';
+    el.style.width = win.w + 'px';
+    el.style.height = win.h + 'px';
+  }
+
+  /* ── Shelf / launcher ── */
+  function renderShelf() {
+    const box = document.getElementById('shelf-apps');
+    box.innerHTML = '';
+    state.apps.filter((a) => a.shelf).forEach((app) => {
+      const btn = document.createElement('button');
+      btn.className = 'shelf-btn';
+      btn.title = app.name;
+      if (app.icon && (String(app.icon).startsWith('http') || String(app.icon).startsWith('data:'))) {
+        btn.innerHTML = `<img src="${app.icon}" style="width:22px;height:22px;border-radius:6px" />`;
+      } else {
+        btn.textContent = app.icon || '📦';
+      }
+      btn.addEventListener('click', () => openApp(app));
+      btn.addEventListener('contextmenu', (e) => openAppContext(e, app));
+      box.appendChild(btn);
+    });
+  }
+
+  function openLauncher() {
+    document.getElementById('launcher').classList.add('open');
+    const grid = document.getElementById('launcher-grid');
+    grid.innerHTML = '';
+    state.apps.forEach((app) => grid.appendChild(makeAppTile(app, () => openApp(app))));
+    document.getElementById('launcher-search').value = '';
+    document.getElementById('launcher-search').focus();
+  }
+  function closeLauncher() {
+    document.getElementById('launcher').classList.remove('open');
+  }
+
+  /* ── Settings / theme ── */
+  function applyTheme(id) {
+    THEMES.forEach((t) => {
+      if (t.id) document.documentElement.classList.remove(t.id);
+    });
+    if (id) document.documentElement.classList.add(id);
+    state.settings.theme = id || '';
+    scheduleSave();
+    document.querySelectorAll('.swatch').forEach((s) => {
+      s.classList.toggle('active', (s.dataset.theme || '') === (id || ''));
+    });
+  }
+
+  function openSettings() {
+    const m = document.getElementById('modal-settings');
+    document.getElementById('set-search').value = state.settings.searchEngine;
+    document.getElementById('set-homepage').value = state.settings.homepage || '';
+    document.getElementById('set-bmbar').checked = !!state.settings.showBookmarksBar;
+    document.getElementById('set-cloak-default').checked = !!state.settings.cloakNewTabs;
+    document.getElementById('set-allow').value = state.settings.defaultAllow || DEFAULT_ALLOW;
+    document.getElementById('set-allowfs').checked = !!state.settings.allowFullscreen;
+    const sw = document.getElementById('theme-swatches');
+    sw.innerHTML = '';
+    THEMES.forEach((t) => {
+      const b = document.createElement('button');
+      b.className = 'swatch' + ((state.settings.theme || '') === t.id ? ' active' : '');
+      b.style.background = t.color;
+      b.dataset.theme = t.id;
+      b.title = t.name;
+      b.addEventListener('click', () => applyTheme(t.id));
+      sw.appendChild(b);
+    });
+    m.classList.add('open');
+  }
+
+  function closeModals() {
+    document.querySelectorAll('.modal-backdrop').forEach((m) => m.classList.remove('open'));
+  }
+
+  /* ── Unified context menus (OS chrome only — never on iframes) ── */
+  let _genEditSave = null;
+
+  function hideCtx() {
+    const m = document.getElementById('ctx-menu');
+    if (m) m.classList.remove('open');
+  }
+
+  function showContextMenu(e, items) {
+    e.preventDefault();
+    e.stopPropagation();
+    hideCtx();
+    const menu = document.getElementById('ctx-menu');
+    menu.innerHTML = '';
+    let count = 0;
+    (items || []).forEach((it) => {
+      if (!it) return;
+      if (it.sep) {
+        const s = document.createElement('div');
+        s.className = 'ctx-sep';
+        menu.appendChild(s);
+        return;
+      }
+      if (it.disabled) return;
+      const d = document.createElement('div');
+      d.className = 'ctx-item' + (it.danger ? ' danger' : '');
+      d.textContent = it.label;
+      d.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        hideCtx();
+        try { it.fn && it.fn(); } catch (err) { console.warn(err); toast(String(err.message || err)); }
+      });
+      menu.appendChild(d);
+      count++;
+    });
+    if (!count) return;
+    const pad = 8;
+    const mw = 220;
+    const mh = Math.min(count * 36 + 20, window.innerHeight - 20);
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x + mw > window.innerWidth - pad) x = window.innerWidth - mw - pad;
+    if (y + mh > window.innerHeight - pad) y = window.innerHeight - mh - pad;
+    menu.style.left = Math.max(pad, x) + 'px';
+    menu.style.top = Math.max(pad, y) + 'px';
+    menu.classList.add('open');
+  }
+
+  function openGenericEdit(title, fields, onSave) {
+    document.getElementById('gen-edit-title').textContent = title;
+    const body = document.getElementById('gen-edit-body');
+    body.innerHTML = '';
+    const values = {};
+    fields.forEach((f) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      const lab = document.createElement('label');
+      lab.textContent = f.label;
+      wrap.appendChild(lab);
+      if (f.type === 'checkbox') {
+        const lab2 = document.createElement('label');
+        lab2.className = 'chk';
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.checked = !!f.value;
+        inp.id = 'gen-f-' + f.key;
+        lab2.append(inp, document.createTextNode(' ' + (f.checkLabel || f.label)));
+        wrap.innerHTML = '';
+        wrap.appendChild(lab2);
+        values[f.key] = () => inp.checked;
+      } else {
+        const inp = document.createElement(f.type === 'textarea' ? 'textarea' : 'input');
+        if (f.type !== 'textarea') inp.type = f.type || 'text';
+        inp.id = 'gen-f-' + f.key;
+        inp.value = f.value != null ? f.value : '';
+        inp.placeholder = f.placeholder || '';
+        wrap.appendChild(inp);
+        values[f.key] = () => inp.value;
+      }
+      body.appendChild(wrap);
+    });
+    _genEditSave = () => {
+      const data = {};
+      Object.keys(values).forEach((k) => { data[k] = values[k](); });
+      onSave(data);
+      closeModals();
+    };
+    document.getElementById('modal-generic-edit').classList.add('open');
+  }
+
+  function openTabContext(e, tab) {
+    showContextMenu(e, [
+      { label: 'Reload', fn: () => navigateTab(tab, tab.url, { push: false }) },
+      { label: tab.cloaked ? 'Uncloak tab' : 'Cloak Tab…', fn: () => cloakTab(tab) },
+      { label: 'Edit title / favicon…', fn: () => openTabEdit(tab) },
+      { label: 'Duplicate', fn: () => { const t = createTab({ url: tab.url, cloaked: tab.cloaked, allow: tab.allow, allowFullscreen: tab.allowFullscreen }); activateTab(t.id); } },
+      { label: 'Open in new tab', fn: () => { const t = createTab({ url: tab.url }); activateTab(t.id); } },
+      { sep: true },
+      { label: 'Copy URL', fn: () => { navigator.clipboard.writeText(tab.url).then(() => toast('URL copied')).catch(() => toast(tab.url)); } },
+      { label: 'Install as app…', fn: () => openInstallApp(tab) },
+      { label: 'Bookmark', fn: () => {
+        if (!isAbout(tab.url) && !state.bookmarks.some((b) => b.url === tab.url)) {
+          state.bookmarks.unshift({ url: tab.url, title: displayTitle(tab), favicon: displayFavicon(tab), at: Date.now() });
+          renderBookmarksBar(); scheduleSave(); toast('Bookmarked');
+        } else toast('Already bookmarked or about: page');
+      }},
+      { sep: true },
+      { label: 'Close', danger: true, fn: () => closeTab(tab.id) },
+      { label: 'Close others', fn: () => { state.tabs.filter((t) => t.id !== tab.id).forEach((t) => closeTab(t.id)); } },
+      { label: 'Close tabs to the right', fn: () => {
+        const idx = state.tabs.findIndex((t) => t.id === tab.id);
+        state.tabs.slice(idx + 1).map((t) => t.id).forEach(closeTab);
+      }},
+    ]);
+  }
+
+  function openHistoryContext(e, entry) {
+    showContextMenu(e, [
+      { label: 'Open', fn: () => { const tab = getActiveTab(); if (tab) navigateTab(tab, entry.url); } },
+      { label: 'Open in new tab', fn: () => { const t = createTab({ url: entry.url }); activateTab(t.id); } },
+      { label: 'Open as app window', fn: () => openAppWindow({ id: uid('tmp'), name: entry.title || entry.url, url: entry.url, icon: faviconFor(entry.url), cloak: false }) },
+      { sep: true },
+      { label: 'Edit title / URL…', fn: () => {
+        openGenericEdit('Edit history entry', [
+          { key: 'title', label: 'Title', value: entry.title || '' },
+          { key: 'url', label: 'URL', value: entry.url || '' },
+        ], (data) => {
+          entry.title = data.title.trim() || data.url;
+          const oldUrl = entry.url;
+          entry.url = normalizeUrl(data.url.trim() || entry.url);
+          // de-dupe by new url
+          state.history = state.history.filter((h) => h === entry || h.url !== entry.url);
+          renderBookmarksBar();
+          refreshOpenHomePages();
+          scheduleSave();
+          toast('History entry updated');
+        });
+      }},
+      { label: 'Copy URL', fn: () => { navigator.clipboard.writeText(entry.url).then(() => toast('URL copied')).catch(() => toast(entry.url)); } },
+      { label: 'Bookmark this', fn: () => {
+        if (!state.bookmarks.some((b) => b.url === entry.url)) {
+          state.bookmarks.unshift({ url: entry.url, title: entry.title || entry.url, favicon: faviconFor(entry.url), at: Date.now() });
+          renderBookmarksBar(); scheduleSave(); toast('Bookmarked');
+        } else toast('Already bookmarked');
+      }},
+      { sep: true },
+      { label: 'Delete from history', danger: true, fn: () => {
+        state.history = state.history.filter((h) => h !== entry && h.url !== entry.url);
+        scheduleSave();
+        refreshOpenHomePages();
+        toast('Removed from history');
+      }},
+      { label: 'Clear all history', danger: true, fn: () => {
+        if (!confirm('Clear entire history?')) return;
+        state.history = [];
+        scheduleSave();
+        refreshOpenHomePages();
+        toast('History cleared');
+      }},
+    ]);
+  }
+
+  function openBookmarkContext(e, bm) {
+    showContextMenu(e, [
+      { label: 'Open', fn: () => { const tab = getActiveTab(); if (tab) navigateTab(tab, bm.url); } },
+      { label: 'Open in new tab', fn: () => { const t = createTab({ url: bm.url }); activateTab(t.id); } },
+      { label: 'Open as app', fn: () => openAppWindow({ id: uid('tmp'), name: bm.title || bm.url, url: bm.url, icon: bm.favicon || faviconFor(bm.url), cloak: false }) },
+      { sep: true },
+      { label: 'Edit…', fn: () => {
+        openGenericEdit('Edit bookmark', [
+          { key: 'title', label: 'Title', value: bm.title || '' },
+          { key: 'url', label: 'URL', value: bm.url || '' },
+          { key: 'favicon', label: 'Favicon URL', value: bm.favicon || '', placeholder: 'optional' },
+        ], (data) => {
+          bm.title = data.title.trim() || data.url;
+          bm.url = normalizeUrl(data.url.trim() || bm.url);
+          bm.favicon = data.favicon.trim() || faviconFor(bm.url);
+          renderBookmarksBar();
+          scheduleSave();
+          toast('Bookmark updated');
+        });
+      }},
+      { label: 'Copy URL', fn: () => { navigator.clipboard.writeText(bm.url).then(() => toast('URL copied')).catch(() => toast(bm.url)); } },
+      { sep: true },
+      { label: 'Delete bookmark', danger: true, fn: () => {
+        state.bookmarks = state.bookmarks.filter((b) => b !== bm && b.url !== bm.url);
+        renderBookmarksBar();
+        scheduleSave();
+        toast('Bookmark deleted');
+      }},
+    ]);
+  }
+
+  function openAppContext(e, app) {
+    showContextMenu(e, [
+      { label: 'Open', fn: () => openApp(app) },
+      { label: 'Open in new tab', fn: () => { const t = createTab({ url: app.url }); activateTab(t.id); closeLauncher(); } },
+      { label: 'Open as window', fn: () => { openAppWindow(app); closeLauncher(); } },
+      { sep: true },
+      { label: 'Edit app…', fn: () => {
+        openGenericEdit('Edit app', [
+          { key: 'name', label: 'Name', value: app.name || '' },
+          { key: 'url', label: 'URL', value: app.url || '' },
+          { key: 'icon', label: 'Icon (emoji or URL)', value: app.icon || '' },
+          { key: 'shelf', label: 'Pin', type: 'checkbox', value: !!app.shelf, checkLabel: 'Pin to shelf' },
+          { key: 'cloak', label: 'Cloak', type: 'checkbox', value: !!app.cloak, checkLabel: 'Hide URL in window' },
+        ], (data) => {
+          app.name = data.name.trim() || app.name;
+          app.url = data.url.trim() ? normalizeUrl(data.url.trim()) : app.url;
+          app.icon = data.icon.trim() || app.icon || '📦';
+          app.shelf = !!data.shelf;
+          app.cloak = !!data.cloak;
+          renderShelf();
+          refreshOpenHomePages();
+          scheduleSave();
+          toast('App updated');
+        });
+      }},
+      { label: app.shelf ? 'Unpin from shelf' : 'Pin to shelf', fn: () => {
+        app.shelf = !app.shelf;
+        renderShelf();
+        scheduleSave();
+        toast(app.shelf ? 'Pinned' : 'Unpinned');
+      }},
+      { label: 'Copy URL', fn: () => { navigator.clipboard.writeText(app.url).then(() => toast('URL copied')).catch(() => toast(app.url)); } },
+      { sep: true },
+      { label: 'Uninstall app', danger: true, disabled: !!app.system, fn: () => {
+        if (app.system) { toast('System apps cannot be removed'); return; }
+        state.apps = state.apps.filter((a) => a.id !== app.id);
+        renderShelf();
+        refreshOpenHomePages();
+        scheduleSave();
+        toast('App uninstalled');
+      }},
+    ]);
+  }
+
+  function openShelfChromeContext(e) {
+    showContextMenu(e, [
+      { label: 'Open launcher', fn: openLauncher },
+      { label: 'Settings', fn: openSettings },
+      { label: 'New tab', fn: () => { const t = createTab(); activateTab(t.id); } },
+      { sep: true },
+      { label: 'Toggle bookmarks bar', fn: () => {
+        state.settings.showBookmarksBar = !state.settings.showBookmarksBar;
+        renderBookmarksBar(); scheduleSave();
+      }},
+      { label: 'Install app from URL…', fn: () => openInstallApp() },
+    ]);
+  }
+
+  function openTabstripEmptyContext(e) {
+    showContextMenu(e, [
+      { label: 'New tab', fn: () => { const t = createTab(); activateTab(t.id); } },
+      { label: 'Reopen closed tab (last history)', fn: () => {
+        const h = state.history[0];
+        if (h) { const t = createTab({ url: h.url }); activateTab(t.id); }
+        else toast('No history');
+      }},
+      { sep: true },
+      { label: 'Close all tabs', danger: true, fn: () => {
+        const ids = state.tabs.map((t) => t.id);
+        ids.forEach(closeTab);
+      }},
+    ]);
+  }
+
+  function openOmniboxContext(e) {
+    const tab = getActiveTab();
+    showContextMenu(e, [
+      { label: 'Paste & go', fn: async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text && tab) navigateTab(tab, text);
+        } catch { toast('Clipboard access denied'); }
+      }},
+      { label: 'Copy current URL', fn: () => {
+        if (!tab) return;
+        navigator.clipboard.writeText(tab.url).then(() => toast('URL copied')).catch(() => toast(tab.url));
+      }},
+      { label: 'Clear omnibox', fn: () => { document.getElementById('omnibox').value = ''; document.getElementById('omnibox').focus(); } },
+      { sep: true },
+      { label: tab && tab.cloaked ? 'Uncloak tab' : 'Cloak tab', fn: () => { if (tab) cloakTab(tab); } },
+    ]);
+  }
+
+  function openHomeChromeContext(e) {
+    showContextMenu(e, [
+      { label: 'New tab', fn: () => { const t = createTab(); activateTab(t.id); } },
+      { label: 'Settings', fn: openSettings },
+      { label: 'View history', fn: showHistory },
+      { label: 'Install app…', fn: () => openInstallApp() },
+      { sep: true },
+      { label: 'Reload home', fn: () => {
+        const tab = getActiveTab();
+        if (tab) navigateTab(tab, 'about:home', { push: false });
+      }},
+    ]);
+  }
+
+  function cloakTab(tab) {
+    tab.cloaked = !tab.cloaked;
+    toast(tab.cloaked ? 'Tab cloaked (shows about:blank)' : 'Tab uncloaked');
+    renderTabstrip();
+    updateOmnibox();
+    scheduleSave();
+  }
+
+  function openTabEdit(tab) {
+    state.editingTabId = tab.id;
+    document.getElementById('edit-title').value = tab.customTitle || '';
+    document.getElementById('edit-favicon').value = tab.customFavicon || '';
+    document.getElementById('edit-url').value = tab.url;
+    document.getElementById('edit-allow').value = tab.allow || '';
+    document.getElementById('edit-allowfs').checked = !!tab.allowFullscreen;
+    document.getElementById('modal-tab-edit').classList.add('open');
+  }
+
+  function openInstallApp(fromTab) {
+    document.getElementById('inst-name').value = fromTab ? displayTitle(fromTab) : '';
+    document.getElementById('inst-url').value = fromTab ? fromTab.url : '';
+    document.getElementById('inst-icon').value = fromTab ? (fromTab.customFavicon || fromTab.favicon || '') : '';
+    document.getElementById('inst-cloak').checked = true;
+    document.getElementById('inst-shelf').checked = true;
+    document.getElementById('modal-install-app').classList.add('open');
+  }
+
+  function openMoreMenu(e) {
+    const btn = document.getElementById('btn-more');
+    const r = btn.getBoundingClientRect();
+    const fake = { clientX: r.right - 10, clientY: r.bottom + 4, preventDefault() {}, stopPropagation() {} };
+    showContextMenu(fake, [
+      { label: 'New tab', fn: () => { const t = createTab(); activateTab(t.id); } },
+      { label: 'Bookmarks bar', fn: () => { state.settings.showBookmarksBar = !state.settings.showBookmarksBar; renderBookmarksBar(); scheduleSave(); } },
+      { label: 'History', fn: () => showHistory() },
+      { sep: true },
+      { label: 'Cloak this tab', fn: () => { const t = getActiveTab(); if (t) cloakTab(t); } },
+      { label: 'Edit tab…', fn: () => { const t = getActiveTab(); if (t) openTabEdit(t); } },
+      { label: 'Install page as app…', fn: () => openInstallApp(getActiveTab()) },
+      { sep: true },
+      { label: 'Settings', fn: openSettings },
+      { label: 'Open n3xn DevTools', fn: () => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F12', bubbles: true }));
+        toast('DevTools: use the floating ⚙ if injected');
+      }},
+    ]);
+  }
+
+  function refreshOpenHomePages() {
+    state.tabs.forEach((tab) => {
+      if ((tab.isHome || tab.url === 'about:home') && tab._wrap) {
+        tab._wrap.remove();
+        tab._wrap = null;
+        if (tab.id === state.activeTabId) {
+          const w = ensureFrame(tab);
+          w.classList.add('active');
+        }
+      }
+    });
+  }
+
+  function showHistory() {
+    const t = createTab({ url: 'about:home' });
+    activateTab(t.id);
+    const wrap = t._wrap;
+    if (!wrap) return;
+    const page = wrap.querySelector('.home-page') || wrap;
+    let box = page.querySelector('[data-history-panel]');
+    if (box) box.remove();
+    box = document.createElement('div');
+    box.dataset.historyPanel = '1';
+    box.style.cssText = 'max-width:700px;margin:20px auto;background:var(--surface);border:1px solid var(--border-color2);border-radius:12px;padding:12px;max-height:50vh;overflow:auto';
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600';
+    head.innerHTML = '<span>History</span>';
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'btn danger';
+    clearBtn.textContent = 'Clear all';
+    clearBtn.style.fontSize = '12px';
+    clearBtn.addEventListener('click', () => {
+      if (!confirm('Clear entire history?')) return;
+      state.history = [];
+      scheduleSave();
+      box.querySelectorAll('[data-hist-row]').forEach((n) => n.remove());
+      toast('History cleared');
+    });
+    head.appendChild(clearBtn);
+    box.appendChild(head);
+    if (!state.history.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color:var(--muted);padding:12px;font-size:13px';
+      empty.textContent = 'No history yet.';
+      box.appendChild(empty);
+    }
+    state.history.slice(0, 80).forEach((h) => {
+      const row = document.createElement('div');
+      row.dataset.histRow = '1';
+      row.style.cssText = 'padding:8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;gap:8px;align-items:center';
+      const fav = document.createElement('img');
+      fav.src = faviconFor(h.url);
+      fav.width = 14; fav.height = 14;
+      fav.style.borderRadius = '2px';
+      fav.onerror = () => { fav.style.display = 'none'; };
+      const text = document.createElement('span');
+      text.style.flex = '1';
+      text.style.overflow = 'hidden';
+      text.style.textOverflow = 'ellipsis';
+      text.style.whiteSpace = 'nowrap';
+      text.textContent = (h.title || h.url) + ' — ' + h.url;
+      row.append(fav, text);
+      row.addEventListener('click', () => navigateTab(t, h.url));
+      row.addEventListener('mouseenter', () => { row.style.background = 'var(--hover-color)'; });
+      row.addEventListener('mouseleave', () => { row.style.background = ''; });
+      row.addEventListener('contextmenu', (ev) => openHistoryContext(ev, h));
+      box.appendChild(row);
+    });
+    page.appendChild(box);
+  }
+
+  /* ── Clock ── */
+  function tickClock() {
+    const el = document.getElementById('shelf-clock');
+    const d = new Date();
+    el.innerHTML = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) +
+      '<br>' + d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  /* ── Export / import ── */
+  async function exportData() {
+    await saveAll();
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      settings: state.settings,
+      bookmarks: state.bookmarks,
+      history: state.history,
+      apps: state.apps,
+      tabs: state.tabs.map((t) => ({
+        url: t.url, title: t.title, customTitle: t.customTitle,
+        favicon: t.favicon, customFavicon: t.customFavicon,
+        cloaked: t.cloaked, allow: t.allow, allowFullscreen: t.allowFullscreen,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'n3xn-backup-' + Date.now() + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Backup exported');
+  }
+
+  async function importData(file) {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (data.settings) Object.assign(state.settings, data.settings);
+    if (Array.isArray(data.bookmarks)) state.bookmarks = data.bookmarks;
+    if (Array.isArray(data.history)) state.history = data.history;
+    if (Array.isArray(data.apps)) state.apps = data.apps;
+    applyTheme(state.settings.theme);
+    renderBookmarksBar();
+    renderShelf();
+    scheduleSave();
+    toast('Backup imported');
+  }
+
+  async function clearAllData() {
+    if (!confirm('Clear ALL n3xn data (tabs, bookmarks, history, apps, settings)?')) return;
+    for (const s of STORES) await idbClear(s);
+    state.tabs.forEach((t) => { if (t._wrap) t._wrap.remove(); });
+    state.tabs = [];
+    state.bookmarks = [];
+    state.history = [];
+    state.apps = BUILTIN_APPS.map((a) => ({ ...a }));
+    state.settings = {
+      theme: '',
+      searchEngine: 'https://duckduckgo.com/?q=%s',
+      homepage: '',
+      showBookmarksBar: false,
+      cloakNewTabs: false,
+      defaultAllow: DEFAULT_ALLOW,
+      allowFullscreen: true,
+    };
+    applyTheme('');
+    const t = createTab({ url: 'about:home' });
+    activateTab(t.id);
+    renderShelf();
+    renderBookmarksBar();
+    toast('All data cleared');
+  }
+
+  /* ── Wire UI ── */
+  function wire() {
+    document.getElementById('new-tab-btn').addEventListener('click', () => {
+      const t = createTab();
+      activateTab(t.id);
+    });
+    document.getElementById('btn-back').addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (!tab || tab.historyIndex <= 0) return;
+      tab.historyIndex--;
+      navigateTab(tab, tab.historyStack[tab.historyIndex], { push: false });
+    });
+    document.getElementById('btn-fwd').addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (!tab || tab.historyIndex >= tab.historyStack.length - 1) return;
+      tab.historyIndex++;
+      navigateTab(tab, tab.historyStack[tab.historyIndex], { push: false });
+    });
+    document.getElementById('btn-reload').addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (!tab) return;
+      if (tab._iframe) {
+        try { tab._iframe.contentWindow.location.reload(); } catch { navigateTab(tab, tab.url, { push: false }); }
+      } else {
+        navigateTab(tab, tab.url, { push: false });
+      }
+    });
+    document.getElementById('omnibox').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const tab = getActiveTab();
+      if (!tab) return;
+      navigateTab(tab, e.target.value);
+    });
+    document.getElementById('btn-star').addEventListener('click', toggleBookmark);
+    document.getElementById('btn-more').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMoreMenu(e);
+    });
+    document.getElementById('btn-launcher').addEventListener('click', () => {
+      if (document.getElementById('launcher').classList.contains('open')) closeLauncher();
+      else openLauncher();
+    });
+    document.getElementById('btn-launcher').addEventListener('contextmenu', (e) => {
+      showContextMenu(e, [
+        { label: 'Open launcher', fn: openLauncher },
+        { label: 'Install app…', fn: () => openInstallApp() },
+        { label: 'Settings', fn: openSettings },
+      ]);
+    });
+    document.getElementById('btn-settings').addEventListener('click', openSettings);
+    document.getElementById('btn-settings').addEventListener('contextmenu', (e) => {
+      showContextMenu(e, [
+        { label: 'Open settings', fn: openSettings },
+        { label: 'Export backup', fn: exportData },
+        { label: 'Toggle bookmarks bar', fn: () => {
+          state.settings.showBookmarksBar = !state.settings.showBookmarksBar;
+          renderBookmarksBar(); scheduleSave();
+        }},
+      ]);
+    });
+    document.getElementById('launcher').addEventListener('click', (e) => {
+      if (e.target.id === 'launcher') closeLauncher();
+    });
+    document.getElementById('launcher-search').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const grid = document.getElementById('launcher-grid');
+      grid.innerHTML = '';
+      state.apps.filter((a) => a.name.toLowerCase().includes(q) || (a.url || '').toLowerCase().includes(q))
+        .forEach((app) => grid.appendChild(makeAppTile(app, () => openApp(app))));
+    });
+
+    document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', closeModals));
+    document.querySelectorAll('.modal-backdrop').forEach((m) => {
+      m.addEventListener('click', (e) => { if (e.target === m) closeModals(); });
+    });
+
+    document.getElementById('edit-save').addEventListener('click', () => {
+      const tab = getTab(state.editingTabId);
+      if (!tab) return;
+      const title = document.getElementById('edit-title').value.trim();
+      const fav = document.getElementById('edit-favicon').value.trim();
+      const url = document.getElementById('edit-url').value.trim();
+      const allow = document.getElementById('edit-allow').value.trim();
+      const allowfs = document.getElementById('edit-allowfs').checked;
+      tab.customTitle = title || null;
+      tab.customFavicon = fav || null;
+      tab.allow = allow || state.settings.defaultAllow;
+      tab.allowFullscreen = allowfs;
+      if (url && url !== tab.url) navigateTab(tab, url);
+      else {
+        if (tab._iframe) {
+          tab._iframe.setAttribute('allow', tab.allow);
+          if (allowfs) tab._iframe.setAttribute('allowfullscreen', '');
+          else tab._iframe.removeAttribute('allowfullscreen');
+        }
+        renderTabstrip();
+        updateOmnibox();
+        scheduleSave();
+      }
+      closeModals();
+      toast('Tab updated');
+    });
+
+    document.getElementById('inst-save').addEventListener('click', () => {
+      const name = document.getElementById('inst-name').value.trim() || 'App';
+      const url = document.getElementById('inst-url').value.trim();
+      if (!url) { toast('URL required'); return; }
+      const icon = document.getElementById('inst-icon').value.trim() || '📦';
+      const app = {
+        id: uid('app'),
+        name,
+        url: normalizeUrl(url),
+        icon,
+        cloak: document.getElementById('inst-cloak').checked,
+        shelf: document.getElementById('inst-shelf').checked,
+      };
+      state.apps.push(app);
+      renderShelf();
+      scheduleSave();
+      closeModals();
+      openApp(app);
+      toast('App installed: ' + name);
+    });
+
+    // Settings live bind on Done
+    document.querySelector('#modal-settings .btn.primary').addEventListener('click', () => {
+      state.settings.searchEngine = document.getElementById('set-search').value;
+      state.settings.homepage = document.getElementById('set-homepage').value.trim();
+      state.settings.showBookmarksBar = document.getElementById('set-bmbar').checked;
+      state.settings.cloakNewTabs = document.getElementById('set-cloak-default').checked;
+      state.settings.defaultAllow = document.getElementById('set-allow').value.trim() || DEFAULT_ALLOW;
+      state.settings.allowFullscreen = document.getElementById('set-allowfs').checked;
+      renderBookmarksBar();
+      scheduleSave();
+    });
+
+    document.getElementById('btn-export').addEventListener('click', exportData);
+    document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const f = e.target.files?.[0];
+      if (f) importData(f).catch((err) => toast('Import failed: ' + err.message));
+      e.target.value = '';
+    });
+    document.getElementById('btn-clear-data').addEventListener('click', clearAllData);
+
+    document.addEventListener('click', hideCtx);
+    document.getElementById('gen-edit-save').addEventListener('click', () => {
+      if (typeof _genEditSave === 'function') _genEditSave();
+    });
+
+    // Global OS chrome context menus — skip iframes & native inputs when intentional
+    document.addEventListener('contextmenu', (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      // Never hijack inside iframe documents (events from iframe don't bubble here anyway)
+      if (t.tagName === 'IFRAME') return;
+      // Already handled by element-specific handlers (they stopPropagation)
+      if (e.defaultPrevented) return;
+
+      if (t.closest('#tabstrip')) {
+        if (!t.closest('.tab')) openTabstripEmptyContext(e);
+        return;
+      }
+      if (t.closest('#omnibox-wrap') || t.id === 'omnibox') {
+        openOmniboxContext(e);
+        return;
+      }
+      if (t.closest('#toolbar')) {
+        showContextMenu(e, [
+          { label: 'New tab', fn: () => { const tab = createTab(); activateTab(tab.id); } },
+          { label: 'Reload', fn: () => document.getElementById('btn-reload').click() },
+          { label: 'Bookmark page', fn: toggleBookmark },
+          { sep: true },
+          { label: 'Settings', fn: openSettings },
+        ]);
+        return;
+      }
+      if (t.closest('#shelf') || t.closest('#shelf-clock')) {
+        if (!t.closest('.shelf-btn')) openShelfChromeContext(e);
+        return;
+      }
+      if (t.closest('#bookmarks-bar') && t === document.getElementById('bookmarks-bar')) {
+        return; // handled on bar itself
+      }
+      if (t.closest('#launcher')) {
+        showContextMenu(e, [
+          { label: 'Close launcher', fn: closeLauncher },
+          { label: 'Install app…', fn: () => { closeLauncher(); openInstallApp(); } },
+        ]);
+        return;
+      }
+      // App window titlebars
+      if (t.closest('.win-titlebar')) {
+        const winEl = t.closest('.app-window');
+        const wid = winEl && winEl.dataset.wid;
+        const win = state.windows.find((w) => w.id === wid);
+        if (win) {
+          showContextMenu(e, [
+            { label: win.maximized ? 'Restore' : 'Maximize', fn: () => winEl.querySelector('.win-max').click() },
+            { label: 'Minimize', fn: () => winEl.querySelector('.win-min').click() },
+            { sep: true },
+            { label: 'Copy URL', fn: () => navigator.clipboard.writeText(win.url).then(() => toast('Copied')).catch(() => {}) },
+            { label: 'Open in tab', fn: () => { const tab = createTab({ url: win.url }); activateTab(tab.id); } },
+            { sep: true },
+            { label: 'Close window', danger: true, fn: () => winEl.querySelector('.win-close').click() },
+          ]);
+        }
+        return;
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        const t = createTab();
+        activateTab(t.id);
+      }
+      if (e.ctrlKey && e.key === 'w') {
+        e.preventDefault();
+        if (state.activeTabId) closeTab(state.activeTabId);
+      }
+      if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        document.getElementById('omnibox').focus();
+        document.getElementById('omnibox').select();
+      }
+      if (e.key === 'Escape') {
+        closeLauncher();
+        closeModals();
+        hideCtx();
+      }
+    });
+  }
+
+  /* ── Inject n3xn DevTools (same as kbsigmaboy67AtSchool/git) ── */
+  function injectDevTools() {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.css';
+    document.head.appendChild(css);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.js';
+    s.async = true;
+    s.onerror = () => console.warn('n3xn DevTools failed to load (CDN)');
+    document.head.appendChild(s);
+  }
+
+  /* ── Boot ── */
+  async function boot() {
+    try {
+      db = await openDB();
+      await loadAll();
+    } catch (e) {
+      console.error('n3xn IDB', e);
+    }
+    applyTheme(state.settings.theme);
+    wire();
+    renderShelf();
+    renderBookmarksBar();
+    tickClock();
+    setInterval(tickClock, 10000);
+
+    if (!state.tabs.length) {
+      const t = createTab({ url: 'about:home' });
+      activateTab(t.id);
+    } else {
+      // Rehydrate tabs without unloading — create frames lazily on activate
+      state.tabs.forEach((t) => {
+        t._iframe = null;
+        t._wrap = null;
+        t.historyStack = t.historyStack || [t.url];
+        t.historyIndex = t.historyIndex != null ? t.historyIndex : 0;
+      });
+      activateTab(state.activeTabId || state.tabs[0].id);
+    }
+
+    await loadPreinstalled();
+    renderShelf();
+    injectDevTools();
+
+    requestAnimationFrame(() => {
+      document.getElementById('boot').classList.add('done');
+      setTimeout(() => document.getElementById('boot').remove(), 500);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>
