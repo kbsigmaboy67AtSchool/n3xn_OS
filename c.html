@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Max Tab Cloaker</title>
+<style>
+:root{font-family:system-ui,sans-serif;background:#0d0d0d;color:#e8e8e8;--acc:#3b82f6;--bg2:#161616;--bd:#2a2a2a}
+*{box-sizing:border-box}body{max-width:820px;margin:0 auto;padding:1.25rem}
+h1{font-size:1.35rem;margin:0 0 .25rem}.sub{color:#888;font-size:.85rem;margin-bottom:1.25rem}
+details{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;margin-bottom:.75rem}
+summary{padding:.7rem 1rem;cursor:pointer;font-weight:600;user-select:none}.panel{padding:0 1rem 1rem}
+label{display:block;margin-top:.75rem;font-size:.8rem;color:#999}
+input,select,textarea{width:100%;margin-top:.3rem;padding:.5rem .65rem;background:#111;border:1px solid var(--bd);color:#eee;border-radius:7px;font:inherit}
+textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:.8rem}
+.row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+button{flex:1;min-width:130px;padding:.65rem;border:0;border-radius:8px;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:#333}button:hover{filter:brightness(1.12)}
+.hint{font-size:.75rem;color:#666;margin-top:.35rem}
+#log{margin-top:1.25rem;padding:.75rem 1rem;background:#0a1a0a;border:1px solid #1a3a1a;border-radius:8px;font-size:.8rem;color:#8f8;white-space:pre-wrap;min-height:2.5rem}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:.35rem .75rem;margin-top:.6rem}
+.checks label{display:flex;align-items:center;gap:.4rem;margin:0;color:#ccc;font-size:.85rem}
+.checks input{width:auto;margin:0}
+</style>
+</head>
+<body>
+<h1>Max Tab Cloaker</h1>
+<p class="sub">ChromeOS focused · about:blank favicon wipe · Blocksi stomp · embed · all methods</p>
+
+<details open><summary>1 · Target content</summary><div class="panel">
+<label>URL (used when Raw HTML is empty)</label>
+<input id="url" type="url" value="https://www.google.com">
+<label>Raw HTML (overrides URL)</label>
+<textarea id="html" placeholder="leave empty to use URL"></textarea>
+<label>Element type</label>
+<select id="elType">
+<option value="iframe">iframe</option>
+<option value="embed">embed</option>
+<option value="both">iframe + embed</option>
+</select>
+</div></details>
+
+<details open><summary>2 · Tab appearance</summary><div class="panel">
+<label>Title</label><input id="title" value="Google">
+<label>Favicon</label><input id="favicon" value="https://www.google.com/favicon.ico">
+<div class="checks">
+<label><input type="checkbox" id="setTitle" checked> Set title</label>
+<label><input type="checkbox" id="setFavicon" checked> Set favicon</label>
+<label><input type="checkbox" id="doubleIcon" checked> Both icon relations</label>
+</div></div></details>
+
+<details open><summary>3 · Launch method</summary><div class="panel">
+<label>Method</label>
+<select id="method">
+<option value="ab-wipe">about:blank + favicon wipe</option>
+<option value="invalid-url">Invalid URL (Untitled)</option>
+<option value="blob">blob:</option>
+<option value="data">data:</option>
+<option value="popup-features">Popup feature string</option>
+<option value="pip">Document PiP</option>
+<option value="noopener-chain">noopener chain</option>
+</select>
+<label>Invalid URL argument</label>
+<input id="invalidUrl" value="invalid://cloak">
+</div></details>
+
+<details><summary>4 · iframe / embed attributes</summary><div class="panel">
+<label>sandbox</label>
+<input id="sandbox" value="allow-downloads allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts">
+<label>allow</label>
+<input id="allow" value="accelerometer; autoplay; camera; encrypted-media; fullscreen; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; payment; picture-in-picture; display-capture">
+<label>referrerpolicy</label>
+<input id="referrer" value="no-referrer">
+<div class="checks">
+<label><input type="checkbox" id="noReferrer" checked> no-referrer</label>
+<label><input type="checkbox" id="fullSize" checked> fixed full size</label>
+<label><input type="checkbox" id="allowFullscreen" checked> allowfullscreen</label>
+<label><input type="checkbox" id="loadingEager" checked> loading=eager</label>
+</div></div></details>
+
+<details open><summary>5 · Blocksi stomp</summary><div class="panel">
+<div class="checks">
+<label><input type="checkbox" id="blocksiOn" checked> Enable stomp</label>
+<label><input type="checkbox" id="blocksiEmbed" checked> Also stomp embed</label>
+</div>
+<label>data-blocksi-src</label><input id="blocksiSrc" value="https://www.google.com">
+<label>data-blocksi-processed</label><input id="blocksiProc" value="true">
+<label>Interval (ms)</label><input id="blocksiInterval" type="number" value="400" min="50" step="50">
+</div></details>
+
+<details><summary>6 · Timing</summary><div class="panel">
+<label>Delay (ms)</label><input id="delay" type="number" value="0" min="0">
+<div class="checks">
+<label><input type="checkbox" id="useIdle" checked> requestIdleCallback</label>
+<label><input type="checkbox" id="nullOpener" checked> opener = null</label>
+<label><input type="checkbox" id="blurFocus" checked> blur then focus</label>
+<label><input type="checkbox" id="historyReplace"> history.replaceState</label>
+<label><input type="checkbox" id="injectBase"> base target=_blank</label>
+<label><input type="checkbox" id="stripScripts"> strip scripts from raw HTML</label>
+</div></div></details>
+
+<details><summary>7 · Presets</summary><div class="panel row">
+<button class="sec" data-preset="google">Google</button>
+<button class="sec" data-preset="classroom">Classroom</button>
+<button class="sec" data-preset="docs">Docs</button>
+<button class="sec" data-preset="untitled">Untitled</button>
+<button class="sec" data-preset="max">Max stealth</button>
+</div></details>
+
+<div class="row">
+<button id="launch">Launch cloaked tab</button>
+<button class="sec" id="copy">Copy snippet</button>
+</div>
+<div id="log">Ready.</div>
+
+<script>
+(function(){
+"use strict";
+function $(id){return document.getElementById(id);}
+function log(m){$("log").textContent=m;}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+/* helpers that never contain raw <tag> sequences */
+function tag(name, attrs, selfClose){
+  var a = attrs ? " " + attrs : "";
+  return "\u003c" + name + a + (selfClose ? " /\u003e" : "\u003e");
+}
+function endtag(name){ return "\u003c/" + name + "\u003e"; }
+
+function buildSrc(){
+  var raw = $("html").value.trim();
+  if($("stripScripts").checked && raw){
+    raw = raw.replace(/\u003cscript[\s\S]*?\u003c\/script\u003e/gi,"");
+  }
+  if(raw){
+    return URL.createObjectURL(new Blob([raw],{type:"text/html"}));
+  }
+  return $("url").value.trim() || "about:blank";
+}
+
+function elementMarkup(src){
+  var type = $("elType").value;
+  var sb = $("sandbox").value.trim();
+  var al = $("allow").value.trim();
+  var ref = $("noReferrer").checked ? ($("referrer").value || "no-referrer") : "";
+  var style = $("fullSize").checked
+    ? "position:fixed;inset:0;width:100%;height:100%;border:0;margin:0"
+    : "width:100%;height:100%;border:0";
+
+  var attrs = [
+    'src="' + esc(src) + '"',
+    'style="' + style + '"',
+    sb ? 'sandbox="' + esc(sb) + '"' : "",
+    al ? 'allow="' + esc(al) + '"' : "",
+    ref ? 'referrerpolicy="' + esc(ref) + '"' : "",
+    $("allowFullscreen").checked ? "allowfullscreen" : "",
+    $("loadingEager").checked ? 'loading="eager"' : ""
+  ].filter(Boolean).join(" ");
+
+  var html = "";
+  if(type === "iframe" || type === "both"){
+    html += tag("iframe", attrs) + endtag("iframe");
+  }
+  if(type === "embed" || type === "both"){
+    html += tag("embed", attrs + ' type="text/html"', true);
+  }
+  return html;
+}
+
+function bodyOnly(src){
+  return tag("body", 'style="margin:0;background:#000"') +
+         elementMarkup(src) +
+         endtag("body");
+}
+
+function fullDocument(src, title, favicon){
+  var head = tag("meta", 'charset="utf-8"', true);
+  if($("setTitle").checked){
+    head += tag("title") + esc(title) + endtag("title");
+  }
+  if($("setFavicon").checked){
+    head += tag("link", 'rel="shortcut icon" href="' + esc(favicon) + '"', true);
+    if($("doubleIcon").checked){
+      head += tag("link", 'rel="icon" href="' + esc(favicon) + '"', true);
+    }
+  }
+  if($("injectBase").checked){
+    head += tag("base", 'target="_blank"', true);
+  }
+  return "<!DOCTYPE html>" +
+         tag("html") +
+         tag("head") + head + endtag("head") +
+         bodyOnly(src) +
+         endtag("html");
+}
+
+function installBlocksi(win){
+  if(!$("blocksiOn").checked) return;
+  var SRC  = $("blocksiSrc").value;
+  var PROC = $("blocksiProc").value;
+  var ms   = Number($("blocksiInterval").value) || 400;
+  var sel  = $("blocksiEmbed").checked ? "iframe,embed" : "iframe";
+
+  var s = win.document.createElement("script");
+  s.textContent =
+    "(function(){" +
+      "var SRC=" + JSON.stringify(SRC) + "," +
+          "PROC=" + JSON.stringify(PROC) + "," +
+          "SEL=" + JSON.stringify(sel) + ";" +
+      "function stomp(){" +
+        "document.querySelectorAll(SEL).forEach(function(el){" +
+          "try{" +
+            "if(el.getAttribute('data-blocksi-src')!==SRC)" +
+              "el.setAttribute('data-blocksi-src',SRC);" +
+            "if(el.getAttribute('data-blocksi-processed')!==PROC)" +
+              "el.setAttribute('data-blocksi-processed',PROC);" +
+          "}catch(e){}" +
+        "});" +
+      "}" +
+      "stomp();setInterval(stomp," + ms + ");" +
+      "new MutationObserver(stomp).observe(document.documentElement,{childList:true,subtree:true});" +
+    "})();";
+  win.document.documentElement.appendChild(s);
+}
+
+function paintAppearance(win, title, favicon){
+  try{
+    if($("setTitle").checked) win.document.title = title;
+    if($("setFavicon").checked){
+      function ensure(rel){
+        var l = win.document.querySelector('link[rel="' + rel + '"]');
+        if(!l){
+          l = win.document.createElement("link");
+          l.rel = rel;
+          win.document.head.appendChild(l);
+        }
+        l.href = favicon;
+      }
+      ensure("shortcut icon");
+      if($("doubleIcon").checked) ensure("icon");
+    }
+    if($("nullOpener").checked){
+      try{ win.opener = null; }catch(e){}
+    }
+  }catch(e){}
+}
+
+function schedule(fn){
+  var d = Number($("delay").value) || 0;
+  var run = function(){ setTimeout(fn, d); };
+  if($("useIdle").checked && typeof requestIdleCallback === "function"){
+    requestIdleCallback(run);
+  }else{
+    run();
+  }
+}
+
+function focusWin(win){
+  if($("blurFocus").checked){
+    try{ win.blur(); }catch(e){}
+  }
+  try{ win.focus(); }catch(e){}
+}
+
+function wipeAndInstall(win, src, title){
+  try{
+    win.document.documentElement.innerHTML = bodyOnly(src);
+    installBlocksi(win);
+    if($("historyReplace").checked){
+      try{ win.history.replaceState(null, title, "about:blank"); }catch(e){}
+    }
+  }catch(e){}
+}
+
+function methodAbWipe(src, title, favicon){
+  var win = window.open("about:blank", "_blank");
+  if(!win) return log("Popup blocked");
+  paintAppearance(win, title, favicon);
+  schedule(function(){ wipeAndInstall(win, src, title); });
+  focusWin(win);
+  log("about:blank + favicon wipe launched");
+}
+
+function methodInvalidUrl(src, title, favicon){
+  var bogus = $("invalidUrl").value.trim() || "invalid://cloak";
+  var win = window.open(bogus, "_blank");
+  if(!win) return log("Popup blocked");
+  schedule(function(){
+    paintAppearance(win, title || "Untitled", favicon);
+    wipeAndInstall(win, src, title);
+  });
+  focusWin(win);
+  log("Invalid-URL open launched");
+}
+
+function methodBlob(src, title, favicon){
+  var win = window.open("about:blank", "_blank");
+  if(!win) return log("Popup blocked");
+  var html = fullDocument(src, title, favicon);
+  var url = URL.createObjectURL(new Blob([html], {type:"text/html"}));
+  schedule(function(){
+    win.location.href = url;
+    setTimeout(function(){ try{ installBlocksi(win); }catch(e){} }, 300);
+  });
+  focusWin(win);
+  log("blob: launched");
+}
+
+function methodData(src, title, favicon){
+  var html = fullDocument(src, title, favicon);
+  var data = "data:text/html;charset=utf-8," + encodeURIComponent(html);
+  var win = window.open(data, "_blank", "noopener,noreferrer");
+  if(!win) return log("Popup blocked");
+  setTimeout(function(){ try{ installBlocksi(win); }catch(e){} }, 300);
+  focusWin(win);
+  log("data: launched");
+}
+
+function methodPopupFeatures(src, title, favicon){
+  var features = "noopener=yes,noreferrer=yes,width=1280,height=800,menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes";
+  var win = window.open("about:blank", "_blank", features);
+  if(!win) return log("Popup blocked");
+  paintAppearance(win, title, favicon);
+  schedule(function(){ wipeAndInstall(win, src, title); });
+  focusWin(win);
+  log("Feature-string popup launched");
+}
+
+async function methodPiP(src, title, favicon){
+  if(!("documentPictureInPicture" in window)){
+    return log("Document PiP not supported");
+  }
+  try{
+    var pip = await documentPictureInPicture.requestWindow({width:1280,height:800});
+    paintAppearance(pip, title, favicon);
+    wipeAndInstall(pip, src, title);
+    log("Document PiP opened");
+  }catch(e){
+    log("PiP error: " + e.message);
+  }
+}
+
+function methodNoopenerChain(src, title, favicon){
+  var win = window.open("about:blank", "_blank", "noopener,noreferrer");
+  if(!win) return log("Popup blocked");
+  try{ win.opener = null; }catch(e){}
+  paintAppearance(win, title, favicon);
+  schedule(function(){ wipeAndInstall(win, src, title); });
+  focusWin(win);
+  log("noopener chain launched");
+}
+
+$("launch").onclick = function(){
+  var src     = buildSrc();
+  var title   = $("title").value || "Untitled";
+  var favicon = $("favicon").value || "data:,";
+  var method  = $("method").value;
+  var map = {
+    "ab-wipe": methodAbWipe,
+    "invalid-url": methodInvalidUrl,
+    "blob": methodBlob,
+    "data": methodData,
+    "popup-features": methodPopupFeatures,
+    "pip": methodPiP,
+    "noopener-chain": methodNoopenerChain
+  };
+  (map[method] || methodAbWipe)(src, title, favicon);
+};
+
+var PRESETS = {
+  google: {title:"Google", favicon:"https://www.google.com/favicon.ico", method:"ab-wipe", blocksiSrc:"https://www.google.com"},
+  classroom: {title:"Classes", favicon:"https://ssl.gstatic.com/classroom/favicon.png", method:"ab-wipe", blocksiSrc:"https://classroom.google.com"},
+  docs: {title:"Untitled document - Google Docs", favicon:"https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico", method:"ab-wipe", blocksiSrc:"https://docs.google.com"},
+  untitled: {title:"", method:"invalid-url", invalidUrl:"invalid://cloak", setTitle:false},
+  max: {title:"Google", favicon:"https://www.google.com/favicon.ico", method:"ab-wipe", blocksiOn:true, nullOpener:true, useIdle:true, doubleIcon:true, blurFocus:true}
+};
+
+document.querySelectorAll("[data-preset]").forEach(function(btn){
+  btn.onclick = function(){
+    var p = PRESETS[btn.dataset.preset];
+    if(!p) return;
+    if(p.title !== undefined) $("title").value = p.title;
+    if(p.favicon) $("favicon").value = p.favicon;
+    if(p.method) $("method").value = p.method;
+    if(p.invalidUrl) $("invalidUrl").value = p.invalidUrl;
+    if(p.blocksiSrc) $("blocksiSrc").value = p.blocksiSrc;
+    ["setTitle","setFavicon","blocksiOn","nullOpener","useIdle","doubleIcon","blurFocus"].forEach(function(k){
+      if(p[k] !== undefined) $(k).checked = !!p[k];
+    });
+    log('Preset "' + btn.dataset.preset + '" applied');
+  };
+});
+
+$("copy").onclick = function(){
+  var src = buildSrc();
+  var snippet =
+    'var win=window.open("about:blank","_blank");\n' +
+    'win.document.title=' + JSON.stringify($("title").value) + ';\n' +
+    '["shortcut icon","icon"].forEach(function(rel){\n' +
+    '  var l=win.document.createElement("link");l.rel=rel;\n' +
+    '  l.href=' + JSON.stringify($("favicon").value) + ';\n' +
+    '  win.document.head.appendChild(l);\n' +
+    '});\n' +
+    'setTimeout(function(){\n' +
+    '  win.document.documentElement.innerHTML=' + JSON.stringify(bodyOnly(src)) + ';\n' +
+    '},0);';
+  navigator.clipboard.writeText(snippet).then(function(){
+    log("Snippet copied");
+  }).catch(function(){
+    console.log(snippet);
+    log("Clipboard failed – see console");
+  });
+};
+})();
+</script>
+</body>
+<!-- https://www.youtube.com/results?search_query=best+unblockers+for+school+2026 -->
+</html>
