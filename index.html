@@ -1275,6 +1275,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
     { id: 'app-wiki', name: 'Wikipedia', url: 'https://wikipedia.org', icon: '📖', shelf: false },
     { id: 'app-discord', name: 'Discord', url: 'https://discord.com/app', icon: '💬', shelf: false },
     { id: 'app-nrxn-chat', name: 'NRXN Chat', url: 'about:nrxn-chat', icon: '📹', shelf: true, system: true },
+    { id: 'app-logs', name: 'Logs', url: 'about:logs', icon: '📋', shelf: true, system: true },
     { id: 'app-spotify', name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵', shelf: false },
     { id: 'app-gmail', name: 'Gmail', url: 'https://mail.google.com', icon: '✉', shelf: false },
     { id: 'app-maps', name: 'Maps', url: 'https://maps.google.com', icon: '🗺', shelf: false },
@@ -1766,11 +1767,15 @@ html.glass-on .browser-chrome .bw-bookmarks {
       const doc = iframe.contentDocument;
       const win = iframe.contentWindow;
       if (!doc || !win) return;
-      // same-origin only (typical when OS is behind an unblocker/proxy)
       if (doc.getElementById('n3xn-dt-injected')) return;
       const mark = doc.createElement('meta');
       mark.id = 'n3xn-dt-injected';
       (doc.head || doc.documentElement).appendChild(mark);
+
+      // Always inject console capture into same-origin frames (proxy)
+      installConsoleCaptureOn(win);
+
+      // Try CDN DevTools; on failure show Logs button inside the frame
       const css = doc.createElement('link');
       css.rel = 'stylesheet';
       css.href = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.css';
@@ -1778,10 +1783,19 @@ html.glass-on .browser-chrome .bw-bookmarks {
       const s = doc.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.js';
       s.async = true;
+      s.onerror = function () {
+        try { ensureDevtoolsFallbackButton(doc, win); } catch (e) {}
+      };
       (doc.head || doc.documentElement).appendChild(s);
+      // If CDN is slow/blocked, still offer button after a short wait
+      setTimeout(function () {
+        try {
+          if (!win.__n3xnDtUiReady) ensureDevtoolsFallbackButton(doc, win);
+        } catch (e) {}
+      }, 2500);
       if (surface) surface._dtInjected = true;
-    } catch {
-      // cross-origin — expected outside unblocker
+    } catch (e) {
+      // cross-origin outside proxy
     }
   }
 
@@ -1895,7 +1909,9 @@ html.glass-on .browser-chrome .bw-bookmarks {
     const page = document.createElement('div');
     page.className = 'home-page';
     const kind = tab.url.replace('about:', '');
-    if (kind === 'settings') {
+    if (kind === 'logs') {
+      return buildLogsPage();
+    } else if (kind === 'settings') {
       page.innerHTML = `<h1>Settings</h1><p class="sub">Use the shelf ⚙ button or menu for full settings.</p>`;
       setTimeout(() => openSettings(), 100);
     } else if (kind === 'calc') {
@@ -3732,47 +3748,212 @@ html.glass-on .browser-chrome .bw-bookmarks {
   }
 
   /* ── Inject n3xn DevTools (same as kbsigmaboy67AtSchool/git) ── */
-  function injectDevTools() {
-    if (window.__n3xnConsoleCapture) return;
-    window.__n3xnConsoleCapture = true;
-    window.__n3xnLogs = window.__n3xnLogs || [];
+  function installConsoleCaptureOn(win) {
+    if (!win || win.__n3xnConsoleCapture) return;
+    win.__n3xnConsoleCapture = true;
+    win.__n3xnLogs = win.__n3xnLogs || [];
+    // share host log buffer when possible
+    try {
+      if (win !== window && window.__n3xnLogs) {
+        win.__n3xnLogs = window.__n3xnLogs;
+      }
+    } catch (e) {}
     var levels = ['log', 'info', 'warn', 'error', 'debug'];
     var orig = {};
     levels.forEach(function (lv) {
-      var prev = console[lv];
-      orig[lv] = typeof prev === 'function' ? prev.bind(console) : function () {};
-      console[lv] = function () {
+      var prev = win.console && win.console[lv];
+      orig[lv] = typeof prev === 'function' ? prev.bind(win.console) : function () {};
+      win.console[lv] = function () {
         try {
           var args = Array.prototype.slice.call(arguments);
           var msg = args.map(function (a) {
             try {
               if (typeof a === 'string') return a;
               return JSON.stringify(a);
-            } catch (e) { return String(a); }
+            } catch (e2) { return String(a); }
           }).join(' ');
-          window.__n3xnLogs.push({ t: Date.now(), kind: 'console', level: lv, msg: msg });
-          if (window.__n3xnLogs.length > 500) window.__n3xnLogs.shift();
-        } catch (e) {}
-        try { return orig[lv].apply(console, arguments); } catch (e) {}
+          var row = { t: Date.now(), kind: 'console', level: lv, msg: msg };
+          win.__n3xnLogs.push(row);
+          if (win.__n3xnLogs.length > 800) win.__n3xnLogs.shift();
+          try {
+            if (window.__n3xnLogs && window.__n3xnLogs !== win.__n3xnLogs) {
+              window.__n3xnLogs.push(row);
+              if (window.__n3xnLogs.length > 800) window.__n3xnLogs.shift();
+            }
+          } catch (e3) {}
+          try {
+            if (typeof window.__n3xnOnLog === 'function') window.__n3xnOnLog(row);
+          } catch (e4) {}
+        } catch (e5) {}
+        try { return orig[lv].apply(win.console, arguments); } catch (e6) {}
       };
     });
-    window.addEventListener('error', function (ev) {
+    win.addEventListener('error', function (ev) {
       try {
-        window.__n3xnLogs.push({
+        var row = {
           t: Date.now(), kind: 'error', level: 'error',
-          msg: (ev && ev.message) || 'error'
-        });
+          msg: (ev && (ev.message || (ev.error && ev.error.message))) || 'error'
+        };
+        win.__n3xnLogs.push(row);
+        if (window.__n3xnLogs && window.__n3xnLogs !== win.__n3xnLogs) window.__n3xnLogs.push(row);
       } catch (e) {}
     });
-    window.addEventListener('unhandledrejection', function (ev) {
+    win.addEventListener('unhandledrejection', function (ev) {
       try {
-        window.__n3xnLogs.push({
+        var row = {
           t: Date.now(), kind: 'error', level: 'error',
           msg: 'unhandledrejection: ' + String(ev && ev.reason)
-        });
+        };
+        win.__n3xnLogs.push(row);
+        if (window.__n3xnLogs && window.__n3xnLogs !== win.__n3xnLogs) window.__n3xnLogs.push(row);
       } catch (e) {}
     });
-    // Optional remote DevTools CSS/JS (non-blocking)
+  }
+
+  function ensureDevtoolsFallbackButton(doc, win) {
+    doc = doc || document;
+    win = win || window;
+    if (doc.getElementById('n3xn-dt-fab')) return;
+    var btn = doc.createElement('button');
+    btn.id = 'n3xn-dt-fab';
+    btn.type = 'button';
+    btn.title = 'n3xn Logs';
+    btn.textContent = 'DT';
+    btn.setAttribute('aria-label', 'n3xn Logs');
+    btn.style.cssText = [
+      'position:fixed', 'right:14px', 'bottom:14px', 'z-index:2147483000',
+      'width:44px', 'height:44px', 'border-radius:50%', 'border:1px solid #3c4043',
+      'background:#1e1e24', 'color:#8ab4f8', 'font:700 12px/1 system-ui,sans-serif',
+      'cursor:pointer', 'box-shadow:0 6px 20px rgba(0,0,0,.45)', 'opacity:0.92'
+    ].join(';');
+    btn.onmouseenter = function () { btn.style.opacity = '1'; };
+    btn.onmouseleave = function () { btn.style.opacity = '0.92'; };
+    btn.onclick = function (e) {
+      try { e.preventDefault(); e.stopPropagation(); } catch (err) {}
+      try {
+        if (win.openN3xnLogWindow) win.openN3xnLogWindow();
+        else if (window.openN3xnLogWindow) window.openN3xnLogWindow();
+        else openN3xnLogWindow();
+      } catch (err2) {
+        try { openLogsApp(); } catch (err3) {}
+      }
+    };
+    (doc.body || doc.documentElement).appendChild(btn);
+  }
+
+  function logsPanelHtml(logs) {
+    var rows = (logs || []).slice().reverse();
+    var body = rows.map(function (r) {
+      var col = r.level === 'error' ? '#f28b82' : (r.level === 'warn' ? '#fdd663' : '#81c995');
+      var t = new Date(r.t || Date.now()).toLocaleTimeString();
+      var msg = String(r.msg || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return '<div style="padding:4px 0;border-bottom:1px solid #222;color:' + col + '">' +
+        '<span style="color:#9aa0a6">[' + t + ']</span> ' +
+        '<span style="opacity:.75">' + (r.level || r.kind || 'log') + '</span> ' + msg + '</div>';
+    }).join('');
+    if (!body) body = '<div style="color:#9aa0a6">(no logs yet — console output will appear here)</div>';
+    return [
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>n3xn Logs</title>',
+      '<style>html,body{margin:0;height:100%;background:#0d0d0d;color:#e8e8e8;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace}',
+      '#bar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#16161a;border-bottom:1px solid #2a2a30;position:sticky;top:0}',
+      'button{padding:6px 10px;border-radius:8px;border:1px solid #3c4043;background:#1e1e24;color:#e8e8e8;cursor:pointer;font:12px system-ui}',
+      'button:hover{background:#2a2a30}#out{padding:12px;white-space:pre-wrap;word-break:break-word}</style></head><body>',
+      '<div id="bar"><strong style="margin-right:auto">n3xn Logs</strong>',
+      '<button id="ref">Refresh</button><button id="clr">Clear</button><button id="cpy">Copy</button></div>',
+      '<div id="out">' + body + '</div>',
+      '<script>(function(){',
+      'function paint(){var logs=(window.opener&&window.opener.__n3xnLogs)||window.__n3xnLogs||[];',
+      'var rows=logs.slice().reverse();var h="";',
+      'for(var i=0;i<rows.length;i++){var r=rows[i];var col=r.level==="error"?"#f28b82":(r.level==="warn"?"#fdd663":"#81c995");',
+      'var t=new Date(r.t||Date.now()).toLocaleTimeString();',
+      'var msg=String(r.msg||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");',
+      'h+="<div style=\\"padding:4px 0;border-bottom:1px solid #222;color:"+col+"\\">"',
+      '+"<span style=\\"color:#9aa0a6\\">["+t+"]</span> <span style=\\"opacity:.75\\">"+(r.level||r.kind||"log")+"</span> "+msg+"</div>";}',
+      'if(!h)h="<div style=\\"color:#9aa0a6\\">(no logs yet)</div>";document.getElementById("out").innerHTML=h;}',
+      'document.getElementById("ref").onclick=paint;',
+      'document.getElementById("clr").onclick=function(){try{if(window.opener)window.opener.__n3xnLogs=[];window.__n3xnLogs=[];}catch(e){}paint();};',
+      'document.getElementById("cpy").onclick=function(){var t=document.getElementById("out").innerText;navigator.clipboard.writeText(t);};',
+      'setInterval(paint,1500);',
+      '})();<\/script></body></html>'
+    ].join('');
+  }
+
+  function openN3xnLogWindow() {
+    var html = logsPanelHtml(window.__n3xnLogs || []);
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var w = window.open(url, 'n3xn_logs', 'width=720,height=520');
+    if (!w) {
+      toast('Popup blocked — opening Logs app instead');
+      openLogsApp();
+      return;
+    }
+    try { w.__n3xnLogs = window.__n3xnLogs; } catch (e) {}
+  }
+
+  function openLogsApp() {
+    // In-OS window with live log view (same style)
+    openAppWindow({
+      id: 'app-logs',
+      name: 'Logs',
+      url: 'about:logs',
+      icon: '📋',
+      kind: 'app',
+      system: true
+    });
+  }
+
+  function buildLogsPage() {
+    var page = document.createElement('div');
+    page.className = 'home-page';
+    page.style.cssText = 'padding:0;display:flex;flex-direction:column;height:100%;background:#0d0d0d;color:#e8e8e8;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px 12px;background:#16161a;border-bottom:1px solid #2a2a30;flex-shrink:0';
+    bar.innerHTML = '<strong style="margin-right:auto">n3xn Logs</strong>';
+    var btnR = document.createElement('button');
+    btnR.className = 'btn';
+    btnR.textContent = 'Refresh';
+    var btnC = document.createElement('button');
+    btnC.className = 'btn';
+    btnC.textContent = 'Clear';
+    var btnP = document.createElement('button');
+    btnP.className = 'btn';
+    btnP.textContent = 'Pop out';
+    bar.appendChild(btnR);
+    bar.appendChild(btnC);
+    bar.appendChild(btnP);
+    var out = document.createElement('div');
+    out.style.cssText = 'padding:12px;overflow:auto;flex:1;white-space:pre-wrap;word-break:break-word';
+    function paint() {
+      var logs = window.__n3xnLogs || [];
+      var rows = logs.slice().reverse();
+      out.innerHTML = '';
+      if (!rows.length) {
+        out.innerHTML = '<div style="color:#9aa0a6">(no logs yet — console output will appear here)</div>';
+        return;
+      }
+      rows.forEach(function (r) {
+        var col = r.level === 'error' ? '#f28b82' : (r.level === 'warn' ? '#fdd663' : '#81c995');
+        var d = document.createElement('div');
+        d.style.cssText = 'padding:4px 0;border-bottom:1px solid #222;color:' + col;
+        var t = new Date(r.t || Date.now()).toLocaleTimeString();
+        d.textContent = '[' + t + '] ' + (r.level || r.kind || 'log') + ' ' + (r.msg || '');
+        out.appendChild(d);
+      });
+    }
+    btnR.onclick = paint;
+    btnC.onclick = function () { window.__n3xnLogs = []; paint(); };
+    btnP.onclick = function () { openN3xnLogWindow(); };
+    page.appendChild(bar);
+    page.appendChild(out);
+    paint();
+    page._logsTimer = setInterval(paint, 1200);
+    return page;
+  }
+
+  function injectDevTools() {
+    installConsoleCaptureOn(window);
+    // Try CDN DevTools; always ensure fallback FAB
     try {
       var css = document.createElement('link');
       css.rel = 'stylesheet';
@@ -3781,24 +3962,25 @@ html.glass-on .browser-chrome .bw-bookmarks {
       var s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/gh/kbsigmaboy67AtSchool/git@main/public/devtools.js';
       s.async = true;
-      s.onerror = function () { console.warn('n3xn DevTools CDN failed (console capture still active)'); };
+      var cdnOk = false;
+      s.onload = function () {
+        cdnOk = true;
+        window.__n3xnDtUiReady = true;
+      };
+      s.onerror = function () {
+        console.warn('n3xn DevTools CDN failed — using Logs button');
+        ensureDevtoolsFallbackButton(document, window);
+      };
       document.head.appendChild(s);
-    } catch (e) {}
-  }
-
-  function openN3xnLogWindow() {
-    var w = window.open('about:blank', 'n3xn_logs');
-    if (!w) { toast('Popup blocked'); return; }
-    var rows = (window.__n3xnLogs || []).map(function (r) {
-      return '[' + new Date(r.t).toLocaleTimeString() + '] ' + (r.level || r.kind) + ': ' + r.msg;
-    }).join('\\n');
-    w.document.title = 'n3xn logs';
-    var pre = w.document.createElement('pre');
-    pre.style.cssText = 'margin:0;padding:12px;background:#111;color:#8f8;font:12px/1.4 ui-monospace,monospace;white-space:pre-wrap';
-    pre.textContent = rows || '(no logs yet)';
-    w.document.body.style.margin = '0';
-    w.document.body.style.background = '#111';
-    w.document.body.appendChild(pre);
+      setTimeout(function () {
+        if (!window.__n3xnDtUiReady) ensureDevtoolsFallbackButton(document, window);
+      }, 2500);
+    } catch (e) {
+      ensureDevtoolsFallbackButton(document, window);
+    }
+    // Expose helpers
+    window.openN3xnLogWindow = openN3xnLogWindow;
+    window.openLogsApp = openLogsApp;
   }
 
   /* ── Boot ── */
