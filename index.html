@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1098,7 +1099,21 @@ html.glass-on .browser-chrome .bw-bookmarks {
       </div>
       <label class="chk"><input type="checkbox" id="set-bmbar" /> Show bookmarks bar</label>
       <label class="chk"><input type="checkbox" id="set-cloak-default" /> Open new tabs cloaked (about:blank identity)</label>
+      <label class="chk"><input type="checkbox" id="set-invisible-default" /> Invisible tab (ZWS title + transparent favicon)</label>
+      <label class="chk"><input type="checkbox" id="set-anti-blocksi" checked /> Anti-Blocksi (stomp attrs + remove blocked overlay)</label>
       <label class="chk"><input type="checkbox" id="set-hide-urls" /> Permanently hide URLs (omnibox, titles, menus)</label>
+      <div class="field">
+        <label>Cloak tab title (AB-cloaked windows)</label>
+        <input id="set-cloak-title" type="text" placeholder="Google" />
+      </div>
+      <div class="field">
+        <label>Cloak favicon URL</label>
+        <input id="set-cloak-favicon" type="text" placeholder="https://www.google.com/favicon.ico" />
+      </div>
+      <div class="field">
+        <label>Blocksi fake data-blocksi-src</label>
+        <input id="set-blocksi-src" type="text" placeholder="https://www.google.com" />
+      </div>
       <div class="field">
         <label>Default iframe allow attributes</label>
         <input id="set-allow" type="text" placeholder="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
@@ -1223,6 +1238,14 @@ html.glass-on .browser-chrome .bw-bookmarks {
   const STORES = ['meta', 'tabs', 'bookmarks', 'history', 'apps', 'settings'];
 
   const DEFAULT_ALLOW = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+  const DEFAULT_SANDBOX = 'allow-downloads allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts';
+  const BLOCKSI_FAKE_SRC = 'https://www.google.com';
+  const BLOCKSI_PROC = 'true';
+  const BLOCKSI_INTERVAL_MS = 2;
+  const ZWS = '\u200B';
+  const INVISIBLE_FAVICON = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>');
+  const DEFAULT_CLOAK_TITLE = 'Google';
+  const DEFAULT_CLOAK_FAVICON = 'https://www.google.com/favicon.ico';
   const DEFAULT_FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%233c4043'/%3E%3C/svg%3E";
 
   const THEMES = [
@@ -1298,7 +1321,14 @@ html.glass-on .browser-chrome .bw-bookmarks {
       cloakNewTabs: false,
       hideUrlsPermanently: false,
       defaultAllow: DEFAULT_ALLOW,
+      defaultSandbox: DEFAULT_SANDBOX,
       allowFullscreen: true,
+      blocksiFakeSrc: BLOCKSI_FAKE_SRC,
+      blocksiProcessed: BLOCKSI_PROC,
+      antiBlocksi: true,
+      cloakTitle: DEFAULT_CLOAK_TITLE,
+      cloakFavicon: DEFAULT_CLOAK_FAVICON,
+      invisibleNewTabs: false,
       glass: true,
       glassBlur: 16,
       glassOpacity: 0.72,
@@ -1499,6 +1529,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
   }
 
   function displayTitle(tab) {
+    if (tab.invisible) return ZWS;
     if (tab.customTitle) return tab.customTitle;
     if (tab.title) return tab.title;
     if (tab.isHome || tab.url === 'about:home') return 'New Tab';
@@ -1506,6 +1537,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
   }
 
   function displayFavicon(tab) {
+    if (tab.invisible) return INVISIBLE_FAVICON;
     return tab.customFavicon || tab.favicon || faviconFor(tab.url);
   }
 
@@ -1586,16 +1618,24 @@ html.glass-on .browser-chrome .bw-bookmarks {
       wrap.appendChild(buildAboutPage(tab));
     } else {
       const iframe = document.createElement('iframe');
-      iframe.setAttribute('allow', tab.allow || DEFAULT_ALLOW);
-      if (tab.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
-      iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+      iframe.setAttribute('allow', tab.allow || state.settings.defaultAllow || DEFAULT_ALLOW);
+      iframe.setAttribute('sandbox', state.settings.defaultSandbox || DEFAULT_SANDBOX);
+      if (tab.allowFullscreen !== false && (tab.allowFullscreen || state.settings.allowFullscreen)) {
+        iframe.setAttribute('allowfullscreen', '');
+      }
+      iframe.setAttribute('referrerpolicy', 'no-referrer');
       iframe.loading = 'eager';
+      const fakeSrc = state.settings.blocksiFakeSrc || BLOCKSI_FAKE_SRC;
+      const fakeProc = state.settings.blocksiProcessed || BLOCKSI_PROC;
+      iframe.setAttribute('data-blocksi-src', fakeSrc);
+      iframe.setAttribute('data-blocksi-processed', fakeProc);
       iframe.src = tab.url;
       wrap.classList.add('loading');
       iframe.addEventListener('load', () => {
         wrap.classList.remove('loading');
         tryUpdateTabMeta(tab, iframe);
         tryInjectDevtoolsIntoFrame(iframe, tab);
+        injectAntiBlocksiIntoFrame(iframe); // immediate inside frame document
         if (win._el) renderBrowserUI(win, win._el);
       });
       iframe.addEventListener('error', () => wrap.classList.remove('loading'));
@@ -2162,6 +2202,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
       favicon: opts.favicon || null,
       customFavicon: opts.customFavicon || null,
       cloaked: opts.cloaked != null ? opts.cloaked : !!state.settings.cloakNewTabs,
+      invisible: opts.invisible != null ? opts.invisible : !!state.settings.invisibleNewTabs,
       allow: opts.allow != null ? opts.allow : state.settings.defaultAllow,
       allowFullscreen: opts.allowFullscreen != null ? opts.allowFullscreen : !!state.settings.allowFullscreen,
       brightness: opts.brightness != null ? opts.brightness : 1,
@@ -2179,6 +2220,13 @@ html.glass-on .browser-chrome .bw-bookmarks {
     if (tab.url === 'about:home' || tab.url === 'about:browser') {
       tab.isHome = true;
       tab.url = 'about:home';
+    }
+    if (tab.invisible) {
+      if (!tab.customTitle) tab.customTitle = ZWS;
+      if (!tab.customFavicon) tab.customFavicon = INVISIBLE_FAVICON;
+    } else if (tab.cloaked) {
+      if (!tab.customTitle && state.settings.cloakTitle) tab.customTitle = state.settings.cloakTitle;
+      if (!tab.customFavicon && state.settings.cloakFavicon) tab.customFavicon = state.settings.cloakFavicon;
     }
     win.tabs.push(tab);
     return tab;
@@ -2354,9 +2402,16 @@ html.glass-on .browser-chrome .bw-bookmarks {
         } else {
           const iframe = document.createElement('iframe');
           iframe.src = win.url;
-          iframe.setAttribute('allow', state.settings.defaultAllow);
+          iframe.setAttribute('allow', state.settings.defaultAllow || DEFAULT_ALLOW);
+          iframe.setAttribute('sandbox', state.settings.defaultSandbox || DEFAULT_SANDBOX);
+          iframe.setAttribute('referrerpolicy', 'no-referrer');
           if (state.settings.allowFullscreen) iframe.setAttribute('allowfullscreen', '');
-          iframe.addEventListener('load', () => tryInjectDevtoolsIntoFrame(iframe, win));
+          iframe.setAttribute('data-blocksi-src', state.settings.blocksiFakeSrc || BLOCKSI_FAKE_SRC);
+          iframe.setAttribute('data-blocksi-processed', state.settings.blocksiProcessed || BLOCKSI_PROC);
+          iframe.addEventListener('load', () => {
+            tryInjectDevtoolsIntoFrame(iframe, win);
+            injectAntiBlocksiIntoFrame(iframe);
+          });
           win._iframe = iframe;
           body.appendChild(iframe);
         }
@@ -2444,6 +2499,16 @@ html.glass-on .browser-chrome .bw-bookmarks {
     document.getElementById('set-homepage').value = s.homepage || '';
     document.getElementById('set-bmbar').checked = !!s.showBookmarksBar;
     document.getElementById('set-cloak-default').checked = !!s.cloakNewTabs;
+    var inv = document.getElementById('set-invisible-default');
+    if (inv) inv.checked = !!s.invisibleNewTabs;
+    var ab = document.getElementById('set-anti-blocksi');
+    if (ab) ab.checked = s.antiBlocksi !== false;
+    var ct = document.getElementById('set-cloak-title');
+    if (ct) ct.value = s.cloakTitle || DEFAULT_CLOAK_TITLE;
+    var cf = document.getElementById('set-cloak-favicon');
+    if (cf) cf.value = s.cloakFavicon || DEFAULT_CLOAK_FAVICON;
+    var bs = document.getElementById('set-blocksi-src');
+    if (bs) bs.value = s.blocksiFakeSrc || BLOCKSI_FAKE_SRC;
     document.getElementById('set-hide-urls').checked = !!s.hideUrlsPermanently;
     document.getElementById('set-allow').value = s.defaultAllow || DEFAULT_ALLOW;
     document.getElementById('set-allowfs').checked = !!s.allowFullscreen;
@@ -2575,11 +2640,16 @@ html.glass-on .browser-chrome .bw-bookmarks {
     showContextMenu(e, [
       { label: 'Reload', fn: () => navigateTab(tab, tab.url, { push: false }) },
       { label: tab.cloaked ? 'Uncloak tab' : 'Cloak Tab…', fn: () => cloakTab(tab) },
+      { label: tab.invisible ? 'Disable invisible tab' : 'Invisible tab (ZWS + clear favicon)', fn: () => makeInvisibleTab(tab) },
       { label: 'Edit title / favicon…', fn: () => openTabEdit(tab) },
       { label: 'Tab menu (⋮)…', fn: () => openSurfaceMenu(e, { type: 'tab', tab }) },
       { label: 'Fullscreen tab', fn: () => requestFs(tab._iframe || tab._wrap) },
-      { label: 'Duplicate', fn: () => { const t = createTab({ url: tab.url, cloaked: tab.cloaked, allow: tab.allow, allowFullscreen: tab.allowFullscreen }); activateTab(t.id); } },
+      { label: 'Duplicate', fn: () => { const t = createTab({ url: tab.url, cloaked: tab.cloaked, invisible: tab.invisible, allow: tab.allow, allowFullscreen: tab.allowFullscreen, customTitle: tab.customTitle, customFavicon: tab.customFavicon }); activateTab(t.id); } },
       { label: 'Open in new tab', fn: () => { const t = createTab({ url: tab.url }); activateTab(t.id); } },
+      { label: 'Open proxied in AB-cloaked window', fn: () => openUrlInCloakedTab(tab.url) },
+      { label: 'Full max tab cloaker embed', fn: () => openMaxTabCloaker(tab.url) },
+      { label: 'Full max tab cloaker (invisible)', fn: () => openMaxTabCloaker(tab.url, { invisible: true }) },
+      { label: 'Open OS in AB-cloaked window', fn: () => openOsInCloakedTab() },
       { sep: true },
       { label: 'Copy URL', fn: () => { navigator.clipboard.writeText(tab.url).then(() => toast('URL copied')).catch(() => toast(tab.url)); } },
       { label: 'Install as app…', fn: () => openInstallApp(tab) },
@@ -2770,6 +2840,10 @@ html.glass-on .browser-chrome .bw-bookmarks {
       }},
       { sep: true },
       { label: tab && tab.cloaked ? 'Uncloak tab' : 'Cloak tab', fn: () => { if (tab) cloakTab(tab); } },
+      { label: tab && tab.invisible ? 'Disable invisible' : 'Invisible tab', fn: () => { if (tab) makeInvisibleTab(tab); } },
+      { label: 'Open URL in AB-cloaked window', fn: () => { if (tab) openUrlInCloakedTab(tab.url); } },
+      { label: 'Full max tab cloaker embed', fn: () => { if (tab) openMaxTabCloaker(tab.url); } },
+      { label: 'Open OS in AB-cloaked window', fn: openOsInCloakedTab },
     ]);
   }
 
@@ -2780,6 +2854,8 @@ html.glass-on .browser-chrome .bw-bookmarks {
       { label: 'View history', fn: showHistory },
       { label: 'Install app…', fn: () => openInstallApp() },
       { sep: true },
+      { label: 'Full max tab cloaker embed (this OS)', fn: () => openMaxTabCloaker(location.href) },
+      { label: 'Open OS in AB-cloaked window', fn: openOsInCloakedTab },
       { label: 'Reload home', fn: () => {
         const tab = getActiveTab();
         if (tab) navigateTab(tab, 'about:home', { push: false });
@@ -2789,11 +2865,197 @@ html.glass-on .browser-chrome .bw-bookmarks {
 
   function cloakTab(tab) {
     tab.cloaked = !tab.cloaked;
-    toast(tab.cloaked ? 'Tab cloaked (shows about:blank)' : 'Tab uncloaked');
+    if (tab.cloaked) {
+      if (!tab.customTitle && state.settings.cloakTitle) tab.customTitle = state.settings.cloakTitle;
+      if (!tab.customFavicon && state.settings.cloakFavicon) tab.customFavicon = state.settings.cloakFavicon;
+      toast('Tab cloaked — title stays "' + displayTitle(tab) + '"');
+    } else {
+      toast('Tab uncloaked');
+    }
     renderTabstrip();
     updateOmnibox();
     scheduleSave();
   }
+
+  function makeInvisibleTab(tab) {
+    tab.invisible = !tab.invisible;
+    if (tab.invisible) {
+      tab.customTitle = ZWS;
+      tab.customFavicon = INVISIBLE_FAVICON;
+      tab.cloaked = true;
+      toast('Invisible tab on');
+    } else {
+      if (tab.customTitle === ZWS) tab.customTitle = state.settings.cloakTitle || null;
+      if (tab.customFavicon === INVISIBLE_FAVICON) tab.customFavicon = state.settings.cloakFavicon || null;
+      toast('Invisible tab off');
+    }
+    renderTabstrip();
+    updateOmnibox();
+    scheduleSave();
+  }
+
+  /* ═══ Anti-Blocksi ═══ */
+  function blocksiFake() { return (state.settings && state.settings.blocksiFakeSrc) || BLOCKSI_FAKE_SRC; }
+  function blocksiProc() { return (state.settings && state.settings.blocksiProcessed) || BLOCKSI_PROC; }
+
+  function scrubBlocksiInDoc(doc) {
+    if (!doc) return;
+    try {
+      doc.querySelectorAll('#__blocksi_iframe_blocked__').forEach(function (n) { n.remove(); });
+      doc.querySelectorAll('[id*="blocksi"][id*="blocked"]').forEach(function (n) { n.remove(); });
+    } catch (e) {}
+  }
+
+  function stompBlocksiAttrs(root) {
+    if (!root || !root.querySelectorAll) return;
+    var F = blocksiFake(), P = blocksiProc();
+    try {
+      root.querySelectorAll('iframe, embed').forEach(function (el) {
+        try {
+          if (el.getAttribute('data-blocksi-src') !== F) el.setAttribute('data-blocksi-src', F);
+          if (el.getAttribute('data-blocksi-processed') !== P) el.setAttribute('data-blocksi-processed', P);
+        } catch (e) {}
+      });
+    } catch (e) {}
+  }
+
+  /** Build the anti-blocksi script source (no raw </script> sequences) */
+  function antiBlocksiScriptSource() {
+    var F = JSON.stringify(blocksiFake());
+    var P = JSON.stringify(blocksiProc());
+    return (
+      '(function(){if(window.__n3xnAntiBlocksi)return;window.__n3xnAntiBlocksi=1;' +
+      'var F=' + F + ',P=' + P + ';' +
+      'function scrub(){try{' +
+        'document.querySelectorAll("#__blocksi_iframe_blocked__,[id*=blocksi][id*=blocked]").forEach(function(n){n.remove();});' +
+        'document.querySelectorAll("iframe,embed").forEach(function(el){try{' +
+          'if(el.getAttribute("data-blocksi-src")!==F)el.setAttribute("data-blocksi-src",F);' +
+          'if(el.getAttribute("data-blocksi-processed")!==P)el.setAttribute("data-blocksi-processed",P);' +
+        '}catch(e){}});' +
+        'document.querySelectorAll("iframe").forEach(function(f){try{var d=f.contentDocument;if(!d)return;' +
+          'd.querySelectorAll("#__blocksi_iframe_blocked__,[id*=blocksi][id*=blocked]").forEach(function(n){n.remove();});' +
+          'd.querySelectorAll("iframe,embed").forEach(function(el){try{el.setAttribute("data-blocksi-src",F);el.setAttribute("data-blocksi-processed",P);}catch(e){}});' +
+        '}catch(e){}});' +
+      '}catch(e){}}' +
+      'scrub();setInterval(scrub,2);' +
+      'try{new MutationObserver(scrub).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}' +
+      '})();'
+    );
+  }
+
+  /** Immediately inject anti-blocksi into an iframe's own document (same-origin / proxy) */
+  function injectAntiBlocksiIntoFrame(iframe) {
+    if (!iframe || state.settings.antiBlocksi === false) return;
+    try {
+      var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if (!doc) return;
+      scrubBlocksiInDoc(doc);
+      stompBlocksiAttrs(doc);
+      if (doc.documentElement && !doc.documentElement.dataset.n3xnAb) {
+        doc.documentElement.dataset.n3xnAb = '1';
+        var s = doc.createElement('script');
+        s.textContent = antiBlocksiScriptSource();
+        (doc.head || doc.documentElement).appendChild(s);
+      }
+      // nested
+      doc.querySelectorAll('iframe').forEach(function (child) {
+        try { injectAntiBlocksiIntoFrame(child); } catch (e) {}
+      });
+    } catch (e) {
+      // cross-origin — host-level stomp still runs
+    }
+  }
+
+  function antiBlocksiTick() {
+    if (state.settings && state.settings.antiBlocksi === false) return;
+    scrubBlocksiInDoc(document);
+    stompBlocksiAttrs(document);
+    document.querySelectorAll('iframe').forEach(function (f) {
+      try { injectAntiBlocksiIntoFrame(f); } catch (e) {}
+    });
+  }
+
+  var _antiBlocksiTimer = null;
+  function startAntiBlocksi() {
+    if (_antiBlocksiTimer) return;
+    antiBlocksiTick();
+    _antiBlocksiTimer = setInterval(antiBlocksiTick, BLOCKSI_INTERVAL_MS);
+    try {
+      new MutationObserver(function () { antiBlocksiTick(); })
+        .observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) {}
+  }
+
+  /* ═══ External about:blank cloaker (favicon-wipe) ═══ */
+  function openAbCloaked(targetUrl, opts) {
+    opts = opts || {};
+    var title = opts.title || state.settings.cloakTitle || DEFAULT_CLOAK_TITLE;
+    var favicon = opts.favicon || state.settings.cloakFavicon || DEFAULT_CLOAK_FAVICON;
+    var invisible = !!opts.invisible;
+    if (invisible) {
+      title = ZWS;
+      favicon = INVISIBLE_FAVICON;
+    }
+    var win = window.open('about:blank', '_blank');
+    if (!win) { toast('Popup blocked'); return null; }
+    try {
+      win.document.title = title;
+      ['shortcut icon', 'icon'].forEach(function (rel) {
+        var l = win.document.querySelector('link[rel="' + rel + '"]');
+        if (!l) {
+          l = win.document.createElement('link');
+          l.rel = rel;
+          win.document.head.appendChild(l);
+        }
+        l.href = favicon;
+      });
+      try { win.opener = null; } catch (e) {}
+    } catch (e) {}
+
+    var sandbox = state.settings.defaultSandbox || DEFAULT_SANDBOX;
+    var allow = state.settings.defaultAllow || DEFAULT_ALLOW;
+    var F = blocksiFake(), P = blocksiProc();
+    var src = targetUrl || 'about:blank';
+
+    var inject = function () {
+      try {
+        var body =
+          '<body style="margin:0;background:#000">' +
+          '<iframe src="' + String(src).replace(/"/g, '&quot;') + '" ' +
+          'style="position:fixed;inset:0;width:100%;height:100%;border:0;margin:0" ' +
+          'sandbox="' + sandbox + '" allow="' + allow + '" referrerpolicy="no-referrer" allowfullscreen ' +
+          'data-blocksi-src="' + F + '" data-blocksi-processed="' + P + '" loading="eager"></iframe></body>';
+        win.document.documentElement.innerHTML = body;
+        var s = win.document.createElement('script');
+        s.textContent = antiBlocksiScriptSource();
+        win.document.documentElement.appendChild(s);
+      } catch (e) { console.warn('AB cloak inject', e); }
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(inject);
+    else setTimeout(inject, 0);
+    try { win.focus(); } catch (e) {}
+    toast(invisible ? 'Invisible AB-cloaked window opened' : 'AB-cloaked window opened as "' + title + '"');
+    return win;
+  }
+
+  function openUrlInCloakedTab(url) {
+    openAbCloaked(url || 'about:blank', {});
+  }
+
+  function openOsInCloakedTab() {
+    openAbCloaked(location.href, {});
+  }
+
+  /** Full max tab cloaker — opens current URL (or OS) with every option stacked */
+  function openMaxTabCloaker(url, extra) {
+    extra = extra || {};
+    openAbCloaked(url || location.href, {
+      title: extra.invisible ? ZWS : (state.settings.cloakTitle || DEFAULT_CLOAK_TITLE),
+      favicon: extra.invisible ? INVISIBLE_FAVICON : (state.settings.cloakFavicon || DEFAULT_CLOAK_FAVICON),
+      invisible: !!extra.invisible,
+    });
+  }
+
 
   /* ── Surface ⋮ menu (Chrome-style) + visuals + fullscreen ── */
   function openSurfaceMenu(e, ctx) {
@@ -2803,6 +3065,9 @@ html.glass-on .browser-chrome .bw-bookmarks {
     if (isTab) {
       items.push(
         { label: surface.cloaked ? 'Uncloak (show URL)' : 'Hide URL / cloak', fn: () => cloakTab(surface) },
+        { label: surface.invisible ? 'Disable invisible' : 'Invisible tab (ZWS)', fn: () => makeInvisibleTab(surface) },
+        { label: 'Open in AB-cloaked window', fn: () => openUrlInCloakedTab(surface.url) },
+        { label: 'Full max tab cloaker embed', fn: () => openMaxTabCloaker(surface.url) },
         { label: 'Edit title / favicon…', fn: () => openTabEdit(surface) },
       );
     } else {
@@ -3193,6 +3458,8 @@ html.glass-on .browser-chrome .bw-bookmarks {
     document.getElementById('btn-settings').addEventListener('contextmenu', (e) => {
       showContextMenu(e, [
         { label: 'Open settings', fn: openSettings },
+        { label: 'Full max tab cloaker embed (OS)', fn: () => openMaxTabCloaker(location.href) },
+        { label: 'Open OS in AB-cloaked window', fn: openOsInCloakedTab },
         { label: 'Export backup', fn: exportData },
         { label: 'Toggle bookmarks bar', fn: () => {
           state.settings.showBookmarksBar = !state.settings.showBookmarksBar;
@@ -3270,6 +3537,16 @@ html.glass-on .browser-chrome .bw-bookmarks {
       state.settings.homepage = document.getElementById('set-homepage').value.trim();
       state.settings.showBookmarksBar = document.getElementById('set-bmbar').checked;
       state.settings.cloakNewTabs = document.getElementById('set-cloak-default').checked;
+      var invEl = document.getElementById('set-invisible-default');
+      if (invEl) state.settings.invisibleNewTabs = invEl.checked;
+      var abEl = document.getElementById('set-anti-blocksi');
+      if (abEl) state.settings.antiBlocksi = abEl.checked;
+      var ctEl = document.getElementById('set-cloak-title');
+      if (ctEl) state.settings.cloakTitle = ctEl.value.trim() || DEFAULT_CLOAK_TITLE;
+      var cfEl = document.getElementById('set-cloak-favicon');
+      if (cfEl) state.settings.cloakFavicon = cfEl.value.trim() || DEFAULT_CLOAK_FAVICON;
+      var bsEl = document.getElementById('set-blocksi-src');
+      if (bsEl) state.settings.blocksiFakeSrc = bsEl.value.trim() || BLOCKSI_FAKE_SRC;
       state.settings.hideUrlsPermanently = document.getElementById('set-hide-urls').checked;
       state.settings.defaultAllow = document.getElementById('set-allow').value.trim() || DEFAULT_ALLOW;
       state.settings.allowFullscreen = document.getElementById('set-allowfs').checked;
@@ -3472,6 +3749,7 @@ html.glass-on .browser-chrome .bw-bookmarks {
     // Open Browser app like Chrome on ChromeOS login
     openApp(state.apps.find((a) => a.id === 'app-browser') || { id: 'app-browser', kind: 'browser', name: 'Browser', icon: '🌐' });
     injectDevTools();
+    startAntiBlocksi();
 
     requestAnimationFrame(() => {
       document.getElementById('boot').classList.add('done');
